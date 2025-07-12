@@ -1,0 +1,49 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<div class="container py-5">
+    <h2 class="display-5 fw-bold mb-4">Hồ Sơ Của Tôi</h2>
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card card-body text-center shadow-sm profile-sidebar">
+                <div class="w-25 h-25 bg-success rounded-circle d-flex align-items-center justify-content-center text-white fs-1 fw-bold mx-auto mb-3"
+                     style="width: 100px; height: 100px;">A
+                </div>
+                <h4 class="fw-bold">le hong duc</h4>
+                <p class="text-muted mb-4">lehongduc201204@gmail.com</p>
+                <div class="nav flex-column nav-pills">
+                    <button class="nav-link profile-tab-btn" data-tab="info">Thông tin cá nhân</button>
+                    <button class="nav-link profile-tab-btn" data-tab="security">Bảo mật</button>
+                    <button class="nav-link profile-tab-btn" data-tab="orders">Đơn hàng của tôi</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="card card-body shadow-sm p-4">
+                <h3 class="fw-bold mb-4">Chỉnh sửa thông tin</h3>
+            <form class="row g-3">
+            <div class="col-md-6"><label class="form-label">Họ và tên</label><input type="text" value="le hong duc"
+                                                                                    class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Ngày sinh</label><input type="date" value="2025-07-09"
+                                                                                    class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Số điện thoại</label><input type="tel" value="0399646729"
+                                                                                        class="form-control bg-light"
+                                                                                        readonly>
+            </div>
+            <div class="col-md-6"><label class="form-label">Email</label><input type="email"
+                                                                                value="lehongduc201204@gmail.com"
+                                                                                class="form-control bg-light" readonly>
+            </div>
+            <div class="col-12 text-end mt-4">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            </div>
+        </form>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<div class="container py-5">
+    <div class="card shadow-lg border-0 mb-5">
+        <img src="{{ restaurant.image or 'https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found' }}"
+             onerror="this.onerror=null;this.src='https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found';"
+             class="card-img-top" style="height: 400px; object-fit: cover;">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="display-5 fw-bold">{{ restaurant.name }}</h2>
+                <p class="text-muted">{{ restaurant.description }}</p>
+                <p class="text-muted">{{ restaurant.address }}</p>
+
+<!--                {% if restaurant.rating %}-->
+<!--                <span class="fs-4 fw-bold d-flex align-items-center">-->
+<!--                        <i class="fas fa-star text-warning me-2"></i> {{ restaurant.rating }}-->
+<!--                    </span>-->
+<!--                {% endif %}-->
+            </div>
+<!--            {% if restaurant.discount %}-->
+<!--            <div class="mt-2">-->
+<!--                    <span class="badge bg-danger-subtle text-danger-emphasis fs-6">-->
+<!--                        <i class="fas fa-tag me-1"></i> Giảm {{ restaurant.discount }}%-->
+<!--                    </span>-->
+<!--            </div>-->
+<!--            {% endif %}-->
+        </div>
+    </div>
+
+    <h3 class="display-6 fw-bold mb-4">Thực đơn</h3>
+    <div class="row g-4">
+        {% for item in menu %}
+        <div class="col-md-6">
+            <div class="card card-body h-100 d-flex flex-row justify-content-between align-items-center shadow-sm">
+                <div class="d-flex align-items-center">
+                    <img src="{{ item.image or 'https://placehold.co/400x300/cccccc/ffffff?text=Not+Found' }}"
+                         onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Not+Found';"
+                         class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    <div>
+                        <h5 class="fw-bold">{{ item.name }}</h5>
+                        <p class="text-success fw-semibold mb-0">{{ '{:,.0f} đ'.format(item.price) }}</p>
+                        <p class="text-muted">{{ item.description }}</p>
+                        {% if not item.available %}
+                        <span class="badge bg-secondary">Hết hàng</span>
+                        {% endif %}
+
+                    </div>
+                </div>
+                <button class="btn btn-outline-success fw-bold add-item-btn"
+                        data-item-id="{{ item.id }}"
+                        data-restaurant-id="{{ restaurant.id }}">
+                    Thêm
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

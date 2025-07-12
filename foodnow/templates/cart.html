@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Giỏ hàng của bạn</title>
+</head>
+<body>
+    <h1>🛒 Giỏ hàng</h1>
+
+    {% if cart %}
+        <table border="1">
+            <tr>
+                <th>Món ăn</th>
+                <th>Đơn giá</th>
+                <th>Số lượng</th>
+                <th>Tổng</th>
+            </tr>
+            {% set total = 0 %}
+            {% for item in cart %}
+                {% set subtotal = item.quantity * item.menu_item.price %}
+                {% set total = total + subtotal %}
+                <tr>
+                    <td>{{ item.menu_item.name }}</td>
+                    <td>{{ item.menu_item.price }} VNĐ</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ subtotal }} VNĐ</td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="3"><strong>Tổng cộng:</strong></td>
+                <td><strong>{{ total }} VNĐ</strong></td>
+            </tr>
+        </table>
+
+        <form method="POST" action="{{ url_for('checkout') }}">
+            <button type="submit">Thanh toán</button>
+        </form>
+    {% else %}
+        <p>Giỏ hàng của bạn đang trống.</p>
+    {% endif %}
+
+    <a href="{{ url_for('home') }}">⬅️ Quay lại trang chủ</a>
+</body>
+</html>
