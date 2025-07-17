@@ -13,6 +13,9 @@
                         <a class="nav-link fw-semibold" href="/restaurant">Khám Phá</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="/search">Tìm kiếm</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link fw-semibold" href="#about-us-section" data-scroll="true">Về Chúng Tôi</a>
                     </li>
                     <li class="nav-item">
@@ -41,9 +44,9 @@
             Chào, {{ current_user.name or current_user.username }}
         </a>
         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-            <li><a class="dropdown-item" href="{{ url_for('logout_process') }}">Chỉnh sửa hồ sơ</a></li>
+            <li><a class="dropdown-item" href="/logout">Chỉnh sửa hồ sơ</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="{{ url_for('logout_process') }}">Đăng xuất</a></li>
+            <li><a class="dropdown-item" href="/logout">Đăng xuất</a></li>
         </ul>
     </div>
 {% else %}

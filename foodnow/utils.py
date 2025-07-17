@@ -1,5 +1,5 @@
 from foodnow import app, db
-from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Comment
+from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Comment, Category
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime
@@ -35,12 +35,14 @@ def add_user(name, username, password, phone=None, avatar=None, role=UserRole.CU
 
 # ------------------- NHÀ HÀNG & MÓN ĂN ------------------- #
 
-def load_restaurants(keyword=None):
-    """Lấy danh sách nhà hàng, lọc theo tên"""
+def load_restaurants(keyword=None, address=None):
     query = Restaurant.query
     if keyword:
         query = query.filter(Restaurant.name.ilike(f"%{keyword}%"))
+    if address:
+        query = query.filter(Restaurant.address.ilike(f"%{address}%"))
     return query.all()
+
 
 
 def get_restaurant_by_id(rid):
@@ -50,21 +52,26 @@ def get_restaurant_by_id(rid):
 def get_user_by_id(id):
     return User.query.get(id)
 
+def load_categories():
+    return Category.query.all()
 
-def load_menu_items(restaurant_id=None, keyword=None, price_from=None, price_to=None):
-    """Lọc danh sách món ăn theo nhà hàng, từ khóa, giá"""
-    query = MenuItem.query.filter_by(available=True)
+def load_menu_items(keyword=None, price_from=None, price_to=None, category_id=None):
+    query = MenuItem.query
 
-    if restaurant_id:
-        query = query.filter(MenuItem.restaurant_id == restaurant_id)
     if keyword:
-        query = query.filter(MenuItem.name.ilike(f"%{keyword}%"))
+        query = query.filter(MenuItem.name.ilike(f'%{keyword}%'))
+
     if price_from:
         query = query.filter(MenuItem.price >= price_from)
+
     if price_to:
         query = query.filter(MenuItem.price <= price_to)
 
+    if category_id:
+        query = query.filter(MenuItem.category_id == category_id)
+
     return query.all()
+
 
 
 def get_menu_item_by_id(menu_item_id):

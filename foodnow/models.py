@@ -52,6 +52,17 @@ class Restaurant(BaseModel):
         return self.name
 
 # Món ăn trong menu
+# Danh mục món ăn
+class Category(BaseModel):
+    __tablename__ = 'category'
+    name = Column(String(100), nullable=False, unique=True)
+
+    menu_items = relationship('MenuItem', backref='category', lazy=True)
+
+    def __str__(self):
+        return self.name
+
+# Cập nhật MenuItem để thêm category_id
 class MenuItem(BaseModel):
     __tablename__ = 'menu_item'
     name = Column(String(100), nullable=False)
@@ -61,11 +72,14 @@ class MenuItem(BaseModel):
     image = Column(String(255), nullable=True)
 
     restaurant_id = Column(Integer, ForeignKey('restaurant.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
+
     order_details = relationship('OrderDetail', backref='menu_item', lazy=True)
     cart_items = relationship('CartItem', backref='menu_item', lazy=True)
 
     def __str__(self):
         return self.name
+
 
 # Giỏ hàng tạm
 class CartItem(BaseModel):
@@ -144,19 +158,35 @@ if __name__ == '__main__':
             name='Nhà hàng Bếp Việt',
             address='123 Lê Lợi, Hà Nội',
             phone='0123456789',
-            image='https://example.com/image1.jpg',
+            image='https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop',
             description='Chuyên món Việt truyền thống'
         )
         db.session.add(nha_hang)
         db.session.commit()
 
-        # Tạo món ăn
-        mon1 = MenuItem(name='Phở bò', description='Phở truyền thống', price=40000, available=True,
-                        restaurant_id=nha_hang.id)
-        mon2 = MenuItem(name='Bún chả', description='Đặc sản Hà Nội', price=45000, available=True,
-                        restaurant_id=nha_hang.id)
-        mon3 = MenuItem(name='Nem rán', description='Nem truyền thống giòn tan', price=30000, available=True,
-                        restaurant_id=nha_hang.id)
+        # Tạo danh mục món ăn
+        cat_viet = Category(name='Món Việt')
+        cat_trang_mieng = Category(name='Tráng miệng')
+        cat_nuoc_uong = Category(name='Nước uống')
+        db.session.add_all([cat_viet, cat_trang_mieng, cat_nuoc_uong])
+        db.session.commit()
+
+        # Tạo món ăn mới có danh mục
+        mon1 = MenuItem(
+            name='Phở bò', description='Phở truyền thống', price=40000, available=True,
+            image='https://images.unsplash.com/photo-1589308078055-eb0f6a02e29f',
+            restaurant_id=nha_hang.id, category_id=cat_viet.id)
+
+        mon2 = MenuItem(
+            name='Chè ba màu', description='Chè truyền thống', price=20000, available=True,
+            image='https://images.unsplash.com/photo-1606788075761-4660e7463857',
+            restaurant_id=nha_hang.id, category_id=cat_trang_mieng.id)
+
+        mon3 = MenuItem(
+            name='Nước sấu', description='Giải khát mùa hè', price=15000, available=True,
+            image='https://images.unsplash.com/photo-1625847653057-f28aa8aa8f0b',
+            restaurant_id=nha_hang.id, category_id=cat_nuoc_uong.id)
+
         db.session.add_all([mon1, mon2, mon3])
         db.session.commit()
 
