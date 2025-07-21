@@ -6,48 +6,131 @@
     <div class="row g-4">
         <div class="col-md-3">
             <div class="card card-body text-center shadow-sm profile-sidebar">
-                <div class="w-25 h-25 bg-success rounded-circle d-flex align-items-center justify-content-center text-white fs-1 fw-bold mx-auto mb-3"
-                     style="width: 100px; height: 100px;">A
+                {% if user.avatar %}
+                <img src="{{ user.avatar }}" alt="Avatar" class="rounded-circle mb-3 mx-auto"
+                     style="width: 200px; height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center text-white fs-1 fw-bold mx-auto mb-3"
+                     style="width: 100px; height: 100px;">
+                    {{ user.name[0] }}
                 </div>
-                <h4 class="fw-bold">le hong duc</h4>
-                <p class="text-muted mb-4">lehongduc201204@gmail.com</p>
+                {% endif %}
+                <h4 class="fw-bold">{{ user.name }}</h4>
                 <div class="nav flex-column nav-pills">
-                    <button class="nav-link profile-tab-btn" data-tab="info">Thông tin cá nhân</button>
-                    <button class="nav-link profile-tab-btn" data-tab="security">Bảo mật</button>
-                    <button class="nav-link profile-tab-btn" data-tab="orders">Đơn hàng của tôi</button>
+                    <a href="{{ url_for('profile', tab='info') }}"
+                       class="nav-link {% if tab == 'info' %}active{% endif %}">Thông tin cá nhân</a>
+                    <a href="{{ url_for('profile', tab='security') }}"
+                       class="nav-link {% if tab == 'security' %}active{% endif %}">Bảo mật</a>
+                    <a href="{{ url_for('profile', tab='orders') }}"
+                       class="nav-link {% if tab == 'orders' %}active{% endif %}">Đơn hàng của tôi</a>
+
                 </div>
             </div>
         </div>
+
         <div class="col-md-9">
-            <div class="card card-body shadow-sm p-4">
-                <h3 class="fw-bold mb-4">Chỉnh sửa thông tin</h3>
-                <form class="row g-3">
-                    <div class="col-md-6"><label class="form-label">Họ và tên</label><input type="text"
-                                                                                            value="le hong duc"
-                                                                                            class="form-control"></div>
-                    <div class="col-md-6"><label class="form-label">Ngày sinh</label><input type="date"
-                                                                                            value="2025-07-09"
-                                                                                            class="form-control"></div>
-                    <div class="col-md-6"><label class="form-label">Số điện thoại</label><input type="tel"
-                                                                                                value="0399646729"
-                                                                                                class="form-control bg-light"
-                                                                                                readonly>
-                    </div>
-                    <div class="col-md-6"><label class="form-label">Email</label><input type="email"
-                                                                                        value="lehongduc201204@gmail.com"
-                                                                                        class="form-control bg-light"
-                                                                                        readonly>
-                    </div>
-                    <div class="col-12 text-end mt-4">
-                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                    </div>
-                </form>
+    <div class="card card-body shadow-sm p-4">
+
+        {% if tab == 'info' %}
+        <h3 class="fw-bold mb-4">Chỉnh sửa thông tin</h3>
+        {% if success_msg %}
+        <div class="alert alert-success">{{ success_msg }}</div>
+        {% elif error_msg %}
+        <div class="alert alert-danger">{{ error_msg }}</div>
+        {% endif %}
+
+        <form class="row g-3" method="POST" enctype="multipart/form-data">
+            <div class="col-md-6">
+                <label class="form-label">Họ và tên</label>
+                <input type="text" name="name" value="{{ user.name }}" class="form-control" required>
             </div>
-        </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Ngày sinh</label>
+                <input type="date" name="dob" value="{{ user.dob if user.dob else '' }}" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Số điện thoại</label>
+                <input type="tel" name="phone" value="{{ user.phone }}" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" value="{{ user.username }}" class="form-control bg-light" readonly>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Avatar</label>
+                <input type="file" name="avatar" class="form-control">
+            </div>
+
+            <div class="col-12 text-end mt-4">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            </div>
+        </form>
+
+        {% elif tab == 'security' %}
+        <h3 class="fw-bold mb-4">Đổi mật khẩu</h3>
+        {% if success_msg %}
+        <div class="alert alert-success">{{ success_msg }}</div>
+        {% elif error_msg %}
+        <div class="alert alert-danger">{{ error_msg }}</div>
+        {% endif %}
+
+        <form class="row g-3" method="POST">
+            <div class="col-md-12">
+                <label class="form-label">Mật khẩu cũ</label>
+                <input type="password" name="old_password" class="form-control" required>
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label">Mật khẩu mới</label>
+                <input type="password" name="new_password" class="form-control" required>
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label">Xác nhận mật khẩu mới</label>
+                <input type="password" name="confirm_password" class="form-control" required>
+            </div>
+
+            <div class="col-12 text-end mt-4">
+                <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+            </div>
+        </form>
+
+        {% elif tab == 'orders' %}
+        <h3 class="fw-bold mb-4">Đơn hàng của tôi</h3>
+        {% if orders %}
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Mã đơn</th>
+                <th>Ngày đặt</th>
+                <th>Trạng thái</th>
+                <th>Tổng tiền</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.total }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>Bạn chưa có đơn hàng nào.</p>
+        {% endif %}
+        {% endif %}
 
     </div>
-
 </div>
 
+    </div>
+</div>
 
 {% endblock %}

@@ -3,10 +3,76 @@ from foodnow import app, db, login
 from flask import render_template, request, redirect, url_for, session, jsonify
 import utils
 from flask_login import login_user, logout_user, login_required, current_user
-
 from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail
 from datetime import datetime
+import json
+import requests
+import uuid
+import hmac
+import hashlib
 
+
+@app.route('/pay/momo')
+@login_required
+def pay_with_momo():
+    endpoint = "https://test-payment.momo.vn/v2/gateway/api/create"
+    partner_code = "MOMO"
+    access_key = "F8BBA842ECF85"
+    secret_key = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+
+    order_id = str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
+    amount = "1000"
+    order_info = "Thanh toán đơn hàng qua Momo"
+    redirect_url = "https://your-ngrok-url.ngrok.io/payment-success"
+    ipn_url = "https://your-ngrok-url.ngrok.io/momo_ipn"
+    extra_data = ""
+    request_type = "captureWallet"
+
+    raw_signature = f"accessKey={access_key}&amount={amount}&extraData={extra_data}&ipnUrl={ipn_url}&orderId={order_id}&orderInfo={order_info}&partnerCode={partner_code}&redirectUrl={redirect_url}&requestId={request_id}&requestType={request_type}"
+    signature = hmac.new(secret_key.encode(), raw_signature.encode(), hashlib.sha256).hexdigest()
+
+    data = {
+        "partnerCode": partner_code,
+        "accessKey": access_key,
+        "requestId": request_id,
+        "amount": amount,
+        "orderId": order_id,
+        "orderInfo": order_info,
+        "redirectUrl": redirect_url,
+        "ipnUrl": ipn_url,
+        "extraData": extra_data,
+        "requestType": request_type,
+        "signature": signature,
+        "lang": "vi"
+    }
+
+    print("Payload gửi lên:", data)
+
+    response = requests.post(endpoint, json=data)
+    res_data = response.json()
+    print("Phản hồi từ Momo:", res_data)
+
+    if 'payUrl' not in res_data:
+        return f"Lỗi từ Momo: {res_data.get('message', 'Không xác định')} - Chi tiết: {res_data}", 400
+
+    return redirect(res_data['payUrl'])
+
+
+@app.route('/payment-success')
+def payment_success():
+    # có thể lấy params từ request.args để xử lý thêm
+    return "Thanh toán thành công! 🎉"
+
+
+@app.route('/momo_ipn', methods=['POST'])
+def momo_ipn():
+    # Momo sẽ gọi lại endpoint này để xác nhận đơn hàng
+    data = request.json
+    print("Momo IPN callback:", data)
+
+    # TODO: xác minh chữ ký nếu cần, cập nhật DB đơn hàng v.v.
+    return '', 200  # trả về 200 OK để Momo biết đã nhận
 
 
 @app.route('/')
@@ -17,6 +83,7 @@ def home():
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop"
     ]
     return render_template("index.html", hero_images=hero_images)
+
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -51,10 +118,12 @@ def search():
                            selected_category_id=category_id,
                            query=keyword)
 
+
 @app.route('/restaurant')
 def restaurant():
     restaurants = Restaurant.query.all()
     return render_template('restaurant.html', restaurants=restaurants)
+
 
 @app.route('/restaurant/<int:rid>')
 def view_menu(rid):
@@ -62,6 +131,7 @@ def view_menu(rid):
     if not res:
         return "Không tìm thấy nhà hàng!", 404
     return render_template('menu.html', restaurant=res, menu=res.menu_items)
+
 
 @app.route('/add-to-cart/<int:menu_id>')
 @login_required
@@ -75,11 +145,42 @@ def add_to_cart(menu_id):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
+
 @app.route('/cart')
 @login_required
 def view_cart():
     cart = CartItem.query.filter_by(user_id=current_user.id).all()
-    return render_template('cart.html', cart=cart)
+    total_price = sum(item.menu_item.price * item.quantity for item in cart)
+    shipping_fee = 15000
+    return render_template('cart.html',
+                           cart=cart,
+                           total_price=total_price,
+                           shipping_fee=shipping_fee)
+
+
+@app.route('/cart/update/<int:cart_id>/<change>')
+@login_required
+def update_cart_quantity(cart_id, change):
+    try:
+        change = int(change)
+    except ValueError:
+        return redirect(url_for('view_cart'))  # fallback nếu change không hợp lệ
+
+    item = CartItem.query.get_or_404(cart_id)
+    item.quantity = max(1, item.quantity + change)
+    db.session.commit()
+    return redirect(url_for('view_cart'))
+
+
+@app.route('/cart/remove/<int:cart_id>')
+@login_required
+def remove_from_cart(cart_id):
+    item = CartItem.query.get_or_404(cart_id)
+
+    db.session.delete(item)
+    db.session.commit()
+    return redirect(url_for('view_cart'))
+
 
 @app.route('/checkout', methods=['POST'])
 @login_required
@@ -154,11 +255,68 @@ def load_user(user_id):
     return utils.get_user_by_id(user_id)
 
 
+import os
+from werkzeug.utils import secure_filename
+import hashlib
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    tab = request.args.get('tab', 'info')
+    user = current_user
+    error_msg = ''
+    success_msg = ''
+    orders = []
+
+    if request.method == 'POST':
+        if tab == 'info':
+            # Xử lý cập nhật thông tin cá nhân
+            name = request.form.get('name')
+            phone = request.form.get('phone')
+            dob = request.form.get('dob')
+            avatar = request.files.get('avatar')
+
+            user.name = name
+            user.phone = phone
+            user.dob = dob
+
+            if avatar and avatar.filename != '':
+                filename = secure_filename(avatar.filename)
+                upload_path = os.path.join('static/images', filename)
+                os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+                avatar.save(upload_path)
+                user.avatar = '/' + upload_path
+
+            db.session.commit()
+            success_msg = 'Cập nhật thông tin thành công!'
+
+        elif tab == 'security':
+            # Xử lý đổi mật khẩu
+            old_password = request.form.get('old_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            old_hash = hashlib.md5(old_password.encode('utf-8')).hexdigest()
+            if user.password != old_hash:
+                error_msg = 'Mật khẩu cũ không đúng!'
+            elif new_password != confirm_password:
+                error_msg = 'Mật khẩu mới không khớp!'
+            else:
+                user.password = hashlib.md5(new_password.encode('utf-8')).hexdigest()
+                db.session.commit()
+                success_msg = 'Đổi mật khẩu thành công!'
+
+    if tab == 'orders':
+        orders = Order.query.filter_by(user_id=user.id).all()
+
+    return render_template('profile.html', user=user, tab=tab, orders=orders,
+                           error_msg=error_msg, success_msg=success_msg)
+
+
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
-
-
 
 
 if __name__ == '__main__':

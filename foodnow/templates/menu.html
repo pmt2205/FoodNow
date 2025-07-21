@@ -47,11 +47,11 @@
 
                     </div>
                 </div>
-                <button class="btn btn-outline-success fw-bold add-item-btn"
-                        data-item-id="{{ item.id }}"
-                        data-restaurant-id="{{ restaurant.id }}">
-                    Thêm
-                </button>
+                <a href="{{ url_for('add_to_cart', menu_id=item.id) }}"
+   class="btn btn-outline-success fw-bold">
+   Thêm
+</a>
+
             </div>
         </div>
         {% endfor %}
