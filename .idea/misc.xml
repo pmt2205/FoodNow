@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Black">
-    <option name="sdkName" value="Python 3.13" />
+    <option name="sdkName" value="Python 3.13 (FoodNow)" />
   </component>
+<<<<<<< HEAD
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (FoodNow)" project-jdk-type="Python SDK" />
   <component name="PyCharmProfessionalAdvertiser">
     <option name="shown" value="true" />
   </component>
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (FoodNow)" project-jdk-type="Python SDK" />
+>>>>>>> 5ac3f83e819e21b5fa0076bd691b1bb4d075115a
 </project>

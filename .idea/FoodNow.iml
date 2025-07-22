@@ -2,9 +2,15 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+<<<<<<< HEAD
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10 (FoodNow)" jdkType="Python SDK" />
+=======
+      <excludeFolder url="file://$MODULE_DIR$/.venv" />
+    </content>
+    <orderEntry type="jdk" jdkName="Python 3.13 (FoodNow)" jdkType="Python SDK" />
+>>>>>>> 5ac3f83e819e21b5fa0076bd691b1bb4d075115a
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
