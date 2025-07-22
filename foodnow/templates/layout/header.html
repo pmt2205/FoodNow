@@ -9,9 +9,18 @@
                     <li class="nav-item">
                         <a class="nav-link fw-semibold" href="/">Trang Chủ</a>
                     </li>
+                    {% if current_user.is_authenticated and current_user.role.name == 'RESTAURANT' %}
+
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="/my-restaurant">Quản lý nhà hàng</a>
+                    </li>
+                    {% endif %}
+                    {% if current_user.is_authenticated and current_user.role.name != 'RESTAURANT' %}
+
                     <li class="nav-item">
                         <a class="nav-link fw-semibold" href="/restaurant">Khám Phá</a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link fw-semibold" href="/search">Tìm kiếm</a>
                     </li>
@@ -38,23 +47,25 @@
                 </a>
 
                 {% if current_user.is_authenticated %}
-    <div class="dropdown">
-        <a href="#" class="nav-link dropdown-toggle fw-semibold" id="userMenu" role="button"
-           data-bs-toggle="dropdown" aria-expanded="false">
-            Chào, {{ current_user.name or current_user.username }}
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-            <li><a class="dropdown-item" href="/profile">Chỉnh sửa hồ sơ</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/logout">Đăng xuất</a></li>
-        </ul>
-    </div>
-{% else %}
-    <div id="logged-out-view">
-        <a href="{{ url_for('login_process') }}" class="btn btn-light me-2">Đăng nhập</a>
-        <a href="{{ url_for('register_process') }}" class="btn btn-success">Đăng ký</a>
-    </div>
-{% endif %}
+                <div class="dropdown">
+                    <a href="#" class="nav-link dropdown-toggle fw-semibold" id="userMenu" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Chào, {{ current_user.name or current_user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <li><a class="dropdown-item" href="/profile">Chỉnh sửa hồ sơ</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="/logout">Đăng xuất</a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <div id="logged-out-view">
+                    <a href="{{ url_for('login_process') }}" class="btn btn-light me-2">Đăng nhập</a>
+                    <a href="{{ url_for('register_process') }}" class="btn btn-success">Đăng ký</a>
+                </div>
+                {% endif %}
 
 
             </div>

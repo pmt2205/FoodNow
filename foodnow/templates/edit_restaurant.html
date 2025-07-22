@@ -1,0 +1,34 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Chỉnh sửa Nhà Hàng</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Tên nhà hàng</label>
+            <input type="text" name="name" class="form-control" value="{{ restaurant.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Địa chỉ</label>
+            <input type="text" name="address" class="form-control" value="{{ restaurant.address }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Số điện thoại</label>
+            <input type="text" name="phone" class="form-control" value="{{ restaurant.phone }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Mô tả</label>
+            <textarea name="description" class="form-control">{{ restaurant.description }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Ảnh mới</label>
+            <input type="file" name="image" class="form-control">
+        </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">Cập nhật</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

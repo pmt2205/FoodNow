@@ -1,16 +1,17 @@
 import math
 from foodnow import app, db, login
-from flask import render_template, request, redirect, url_for, session, jsonify
+from flask import render_template, request, redirect, url_for, session, jsonify, flash
 import utils
 from flask_login import login_user, logout_user, login_required, current_user
-from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail
+from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category
 from datetime import datetime
 import json
 import requests
 import uuid
 import hmac
+import os
+from werkzeug.utils import secure_filename
 import hashlib
-
 
 @app.route('/pay/momo')
 @login_required
@@ -58,12 +59,10 @@ def pay_with_momo():
 
     return redirect(res_data['payUrl'])
 
-
 @app.route('/payment-success')
 def payment_success():
     # có thể lấy params từ request.args để xử lý thêm
     return "Thanh toán thành công! 🎉"
-
 
 @app.route('/momo_ipn', methods=['POST'])
 def momo_ipn():
@@ -74,7 +73,6 @@ def momo_ipn():
     # TODO: xác minh chữ ký nếu cần, cập nhật DB đơn hàng v.v.
     return '', 200  # trả về 200 OK để Momo biết đã nhận
 
-
 @app.route('/')
 def home():
     hero_images = [
@@ -83,7 +81,6 @@ def home():
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop"
     ]
     return render_template("index.html", hero_images=hero_images)
-
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -118,12 +115,91 @@ def search():
                            selected_category_id=category_id,
                            query=keyword)
 
-
 @app.route('/restaurant')
 def restaurant():
     restaurants = Restaurant.query.all()
     return render_template('restaurant.html', restaurants=restaurants)
 
+@app.route('/my-restaurant', methods=['GET', 'POST'])
+@login_required
+def my_restaurant():
+    if current_user.role != UserRole.RESTAURANT:
+        return "Bạn không có quyền truy cập!", 403
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        address = request.form.get('address')
+        phone = request.form.get('phone')
+        description = request.form.get('description')
+        image = request.files.get('image')
+
+        filename = None
+        if image and image.filename != '':
+            filename = secure_filename(image.filename)
+            upload_path = os.path.join('static/images', filename)
+            os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+            image.save(upload_path)
+
+        restaurant = Restaurant(
+            name=name,
+            address=address,
+            phone=phone,
+            description=description,
+            image='/' + upload_path if filename else None,
+            user_id=current_user.id  # Gán user hiện tại làm chủ
+        )
+        db.session.add(restaurant)
+        db.session.commit()
+        return redirect(url_for('my_restaurant'))
+
+    # GET: render form
+    my_restaurants = Restaurant.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_restaurant.html', restaurants=my_restaurants)
+
+@app.route('/manage-menu/<int:restaurant_id>', methods=['GET', 'POST'])
+@login_required
+def manage_menu(restaurant_id):
+    restaurant = Restaurant.query.get_or_404(restaurant_id)
+
+    if restaurant.user_id != current_user.id:
+        return "Bạn không có quyền!", 403
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        price = float(request.form.get('price'))  # ép float
+        description = request.form.get('description')
+        category_id = int(request.form.get('category_id'))
+
+        image = request.files.get('image')
+        filename = None
+        if image and image.filename != '':
+            filename = secure_filename(image.filename)
+            upload_path = os.path.join('static/images', filename)
+            os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+            image.save(upload_path)
+            image_path = '/' + upload_path
+        else:
+            image_path = None
+
+        menu_item = MenuItem(
+            name=name,
+            price=price,
+            description=description,
+            category_id=category_id,
+            restaurant_id=restaurant.id,
+            image=image_path
+        )
+        db.session.add(menu_item)
+        db.session.commit()
+        return redirect(url_for('manage_menu', restaurant_id=restaurant.id))
+
+    menu_items = restaurant.menu_items
+    categories = utils.load_categories()
+
+    return render_template('manage_menu.html',
+                           restaurant=restaurant,
+                           menu_items=menu_items,
+                           categories=categories)
 
 @app.route('/restaurant/<int:rid>')
 def view_menu(rid):
@@ -131,7 +207,6 @@ def view_menu(rid):
     if not res:
         return "Không tìm thấy nhà hàng!", 404
     return render_template('menu.html', restaurant=res, menu=res.menu_items)
-
 
 @app.route('/add-to-cart/<int:menu_id>')
 @login_required
@@ -145,7 +220,6 @@ def add_to_cart(menu_id):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
-
 @app.route('/cart')
 @login_required
 def view_cart():
@@ -156,7 +230,6 @@ def view_cart():
                            cart=cart,
                            total_price=total_price,
                            shipping_fee=shipping_fee)
-
 
 @app.route('/cart/update/<int:cart_id>/<change>')
 @login_required
@@ -171,7 +244,6 @@ def update_cart_quantity(cart_id, change):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
-
 @app.route('/cart/remove/<int:cart_id>')
 @login_required
 def remove_from_cart(cart_id):
@@ -181,7 +253,6 @@ def remove_from_cart(cart_id):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
-
 @app.route('/checkout', methods=['POST'])
 @login_required
 def checkout():
@@ -189,8 +260,15 @@ def checkout():
     if not cart:
         return redirect(url_for('home'))
 
+    address = request.form.get('address')
+    phone = request.form.get('phone')
+
     restaurant_id = cart[0].menu_item.restaurant_id
-    order = Order(user_id=current_user.id, restaurant_id=restaurant_id, status='Đang xử lý')
+    order = Order(user_id=current_user.id,
+                  restaurant_id=restaurant_id,
+                  status='Đang xử lý',
+                  address=address,
+                  phone=phone)
     db.session.add(order)
     db.session.commit()
 
@@ -209,7 +287,6 @@ def checkout():
 
     return redirect(url_for('home'))
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
     if request.method == 'POST':
@@ -224,12 +301,20 @@ def login_process():
 
     return render_template('login.html')
 
+@app.route('/login-admin', methods=['post'])
+def login_admin_process():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    user = utils.auth_user(username=username, password=password, role=UserRole.ADMIN)
+    if user:
+        login_user(user)
+
+    return redirect('/admin')
 
 @app.route('/logout')
 def logout_process():
     logout_user()
     return redirect(url_for('home'))
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_process():
@@ -241,6 +326,12 @@ def register_process():
         if password == confirm:
             data = request.form.copy()
             del data['confirm']
+
+            role = data.get('role')
+            if role == 'ADMIN':
+                error_msg = 'Không thể đăng ký tài khoản Admin!'
+                return render_template('register.html', err_msg=error_msg)
+
             avatar = request.files.get('avatar')
             utils.add_user(avatar=avatar, **data)
             return redirect(url_for('login_process'))
@@ -249,16 +340,9 @@ def register_process():
 
     return render_template('register.html', err_msg=error_msg)
 
-
 @login.user_loader
 def load_user(user_id):
     return utils.get_user_by_id(user_id)
-
-
-import os
-from werkzeug.utils import secure_filename
-import hashlib
-
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -314,6 +398,72 @@ def profile():
                            error_msg=error_msg, success_msg=success_msg)
 
 
+@app.route('/menu_item/edit/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+def edit_menu_item(item_id):
+    item = MenuItem.query.get_or_404(item_id)
+    categories = Category.query.all()
+
+    if request.method == 'POST':
+        item.name = request.form['name']
+        item.price = request.form['price']
+        item.description = request.form['description']
+        item.category_id = request.form['category_id']
+
+        image_file = request.files.get('image')
+        if image_file and image_file.filename != '':
+            # TODO: upload image logic here (cloudinary or local) then set item.image
+            pass
+
+        db.session.commit()
+        return redirect(url_for('manage_menu', restaurant_id=item.restaurant_id))
+
+    return render_template('edit_menu_item.html', item=item, categories=categories)
+
+@app.route('/edit_restaurant/<int:restaurant_id>', methods=['GET', 'POST'])
+def edit_restaurant(restaurant_id):
+    restaurant = Restaurant.query.get_or_404(restaurant_id)
+
+    if request.method == 'POST':
+        restaurant.name = request.form.get('name')
+        restaurant.address = request.form.get('address')
+        restaurant.phone = request.form.get('phone')
+        restaurant.description = request.form.get('description')
+
+        # Nếu có upload ảnh mới
+        image = request.files.get('image')
+        if image and image.filename != '':
+            # ⚠️ Triển khai upload lên Cloudinary/S3 hoặc lưu local tuỳ dự án
+            # Ví dụ lưu local:
+            image_path = f'static/uploads/{image.filename}'
+            image.save(image_path)
+            restaurant.image = '/' + image_path
+
+        db.session.commit()
+        flash('Cập nhật nhà hàng thành công.', 'success')
+        return redirect(url_for('my_restaurant'))
+
+    return render_template('edit_restaurant.html', restaurant=restaurant)
+
+
+@app.route('/menu_item/delete/<int:item_id>', methods=['POST'])
+@login_required
+def delete_menu_item(item_id):
+    item = MenuItem.query.get_or_404(item_id)
+    restaurant_id = item.restaurant_id
+    db.session.delete(item)
+    db.session.commit()
+    return redirect(url_for('manage_menu', restaurant_id=restaurant_id))
+
+@app.route('/delete_restaurant/<int:restaurant_id>', methods=['POST'])
+def delete_restaurant(restaurant_id):
+    restaurant = Restaurant.query.get_or_404(restaurant_id)
+    db.session.delete(restaurant)
+    db.session.commit()
+    flash('Xóa nhà hàng thành công.', 'success')
+    return redirect(url_for('my_restaurant'))
+
+
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
@@ -321,4 +471,5 @@ def inject_common():
 
 if __name__ == '__main__':
     with app.app_context():
+        from foodnow import admin
         app.run(debug=True)

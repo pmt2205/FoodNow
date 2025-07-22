@@ -53,27 +53,42 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card card-body shadow-sm">
-                <h3 class="fw-bold mb-3">Tổng cộng</h3>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Tạm tính</span>
-                    <span>{{ '{:,.0f} đ'.format(total_price) }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Phí vận chuyển</span>
-                    <span>{{ '{:,.0f} đ'.format(shipping_fee) }}</span>
-                </div>
-                <hr>
-                <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
-                    <span>Tổng cộng</span>
-                    <span>{{ '{:,.0f} đ'.format(total_price + shipping_fee) }}</span>
-                </div>
-                <div class="d-grid">
-<a href="/pay/momo" class="btn btn-success w-100 mb-2">Thanh toán qua Momo</a>
-<a href="/pay/zalopay" class="btn btn-info w-100">Thanh toán qua ZaloPay</a>
-                </div>
+    <div class="card card-body shadow-sm">
+        <h3 class="fw-bold mb-3">Tổng cộng</h3>
+        <form action="{{ url_for('checkout') }}" method="POST">
+            <div class="mb-3">
+                <label class="form-label">Địa chỉ nhận hàng</label>
+                <input type="text" name="address" class="form-control" required
+                       value="{{ current_user.address if current_user.address else '' }}">
             </div>
+            <div class="mb-3">
+                <label class="form-label">Số điện thoại</label>
+                <input type="tel" name="phone" class="form-control" required
+                       value="{{ current_user.phone if current_user.phone else '' }}">
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+                <span>Tạm tính</span>
+                <span>{{ '{:,.0f} đ'.format(total_price) }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Phí vận chuyển</span>
+                <span>{{ '{:,.0f} đ'.format(shipping_fee) }}</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
+                <span>Tổng cộng</span>
+                <span>{{ '{:,.0f} đ'.format(total_price + shipping_fee) }}</span>
+            </div>
+        </form>
+
+        <div class="d-grid mt-2">
+            <a href="/pay/momo" class="btn btn-success w-100 mb-2">Thanh toán qua Momo</a>
+            <a href="/pay/zalopay" class="btn btn-info w-100">Thanh toán qua ZaloPay</a>
         </div>
+    </div>
+</div>
+
     </div>
 </div>
 

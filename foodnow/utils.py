@@ -19,11 +19,11 @@ def auth_user(username, password, role=None):
 
     return q.first()
 
+def add_user(name, username, password, phone=None, address=None, role='CUSTOMER', avatar=None):
+    password_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
 
-def add_user(name, username, password, phone=None, avatar=None, role=UserRole.CUSTOMER):
-    """Đăng ký người dùng mới"""
-    hashed_pw = hashlib.md5(password.strip().encode('utf-8')).hexdigest()
-    user = User(name=name, username=username.strip(), password=hashed_pw, phone=phone, role=role)
+    user = User(name=name, username=username, password=password_hash,
+                phone=phone, address=address, role=UserRole[role])
 
     if avatar:
         res = cloudinary.uploader.upload(avatar)
@@ -31,6 +31,7 @@ def add_user(name, username, password, phone=None, avatar=None, role=UserRole.CU
 
     db.session.add(user)
     db.session.commit()
+
 
 
 # ------------------- NHÀ HÀNG & MÓN ĂN ------------------- #
