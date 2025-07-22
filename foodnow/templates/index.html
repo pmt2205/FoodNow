@@ -22,17 +22,20 @@
                 </div>
                 <div class="col-lg-5 offset-lg-1 d-none d-lg-block">
                     <div class="card p-4 shadow-lg">
-                        <div class="card-body">
-                            <h3 class="card-title text-center mb-4 text-dark">Tìm món ngon ngay!</h3>
-                            <input id="home-search-input" type="text" class="form-control form-control-lg mb-3"
-                                   placeholder="Phở, Bún chả, Pizza...">
-                            <div class="d-grid">
-                                <button id="home-search-btn" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-search me-2"></i>Tìm kiếm
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+    <div class="card-body">
+        <h3 class="card-title text-center mb-4 text-dark">Tìm món ngon ngay!</h3>
+        <form action="{{ url_for('search') }}" method="get">
+            <input name="keyword" type="text" class="form-control form-control-lg mb-3"
+                   placeholder="Phở, Bún chả, Pizza...">
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search me-2"></i>Tìm kiếm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
                 </div>
             </div>
         </div>

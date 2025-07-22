@@ -40,8 +40,6 @@ class User(BaseModel, UserMixin):
     def __str__(self):
         return self.name
 
-# Nhà hàng
-from enum import Enum as RestaurantStatusEnum
 
 class RestaurantStatus(RestaurantStatusEnum):
     PENDING = "Pending"
