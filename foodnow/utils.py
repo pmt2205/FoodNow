@@ -1,5 +1,5 @@
 from foodnow import app, db
-from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Comment, Category
+from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime
@@ -132,19 +132,6 @@ def save_order(user_id, restaurant_id):
     return True
 
 
-# ------------------- BÌNH LUẬN / ĐÁNH GIÁ ------------------- #
-
-def load_comments(restaurant_id):
-    """Lấy bình luận theo nhà hàng"""
-    return Comment.query.filter_by(restaurant_id=restaurant_id).order_by(Comment.created_date.desc()).all()
-
-
-def add_comment(content, rating, restaurant_id):
-    """Thêm bình luận"""
-    comment = Comment(content=content, rating=rating, restaurant_id=restaurant_id, user=current_user)
-    db.session.add(comment)
-    db.session.commit()
-    return comment
 
 
 # ------------------- THỐNG KÊ / ADMIN ------------------- #

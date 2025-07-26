@@ -1,17 +1,14 @@
-import math
-from foodnow import app, db, login
-from flask import render_template, request, redirect, url_for, session, jsonify, flash
-import utils
-from flask_login import login_user, logout_user, login_required, current_user
-from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category
+import sys, os, utils, requests, uuid, hmac, hashlib
 from datetime import datetime
-import json
-import requests
-import uuid
-import hmac
-import os
+from sqlalchemy.sql import func
+
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from foodnow import app, db, login
+from flask import render_template, request, redirect, url_for, session, flash
+from flask_login import login_user, logout_user, login_required, current_user
+from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
 from werkzeug.utils import secure_filename
-import hashlib
 
 @app.route('/pay/momo')
 @login_required
@@ -201,24 +198,83 @@ def manage_menu(restaurant_id):
                            menu_items=menu_items,
                            categories=categories)
 
+from sqlalchemy.sql import func
+
 @app.route('/restaurant/<int:rid>')
 def view_menu(rid):
-    res = Restaurant.query.get(rid)
-    if not res:
-        return "Không tìm thấy nhà hàng!", 404
-    return render_template('menu.html', restaurant=res, menu=res.menu_items)
+    restaurant = Restaurant.query.get_or_404(rid)
+    menu = MenuItem.query.filter_by(restaurant_id=rid).all()
+
+    # Tính trung bình sao
+    avg_rating = db.session.query(func.avg(Review.rating))\
+        .filter(Review.restaurant_id == rid).scalar()
+    avg_rating = round(avg_rating, 1) if avg_rating else None
+
+    # Kiểm tra user đã đặt hàng chưa
+    has_ordered = False
+    if current_user.is_authenticated:
+        has_ordered = Order.query.filter_by(user_id=current_user.id, restaurant_id=rid).first() is not None
+
+    return render_template('menu.html',
+                           restaurant=restaurant,
+                           menu=menu,
+                           has_ordered=has_ordered,
+                           average_rating=avg_rating)
+
+
+
+@app.route('/submit-review/<int:restaurant_id>', methods=['POST'])
+@login_required
+def submit_review(restaurant_id):
+    # Kiểm tra user đã từng đặt hàng tại nhà hàng này chưa
+    has_ordered = Order.query.filter_by(
+        user_id=current_user.id,
+        restaurant_id=restaurant_id
+    ).first()
+
+    if not has_ordered:
+        flash("Bạn chưa đặt hàng từ nhà hàng này.", "danger")
+        return redirect(url_for('view_menu', rid=restaurant_id))
+
+    # Không cần kiểm tra đánh giá trước đó nữa
+    rating = int(request.form.get('rating'))
+    comment = request.form.get('comment')
+
+    review = Review(
+        user_id=current_user.id,
+        restaurant_id=restaurant_id,
+        rating=rating,
+        comment=comment
+    )
+    db.session.add(review)
+    db.session.commit()
+
+    flash("Cảm ơn bạn đã đánh giá!", "success")
+    return redirect(url_for('view_menu', rid=restaurant_id))
+
+
 
 @app.route('/add-to-cart/<int:menu_id>')
 @login_required
 def add_to_cart(menu_id):
+    # Tìm xem món đã có trong giỏ chưa
     item = CartItem.query.filter_by(user_id=current_user.id, menu_item_id=menu_id).first()
+
+    is_new_item = False
     if item:
         item.quantity += 1
     else:
         item = CartItem(user_id=current_user.id, menu_item_id=menu_id, quantity=1)
         db.session.add(item)
+        is_new_item = True  # 🔸 Đánh dấu là món mới
+
     db.session.commit()
+
+    # ✅ Nếu dùng AJAX bạn có thể return JSON tại đây
+    # return jsonify({'new_item': is_new_item, 'cart_count': CartItem.query.filter_by(user_id=current_user.id).count()})
+
     return redirect(url_for('view_cart'))
+
 
 @app.route('/cart')
 @login_required
@@ -266,7 +322,7 @@ def checkout():
     restaurant_id = cart[0].menu_item.restaurant_id
     order = Order(user_id=current_user.id,
                   restaurant_id=restaurant_id,
-                  status='Đang xử lý',
+                  status=OrderStatus.PENDING,
                   address=address,
                   phone=phone)
     db.session.add(order)
@@ -286,6 +342,75 @@ def checkout():
     db.session.commit()
 
     return redirect(url_for('home'))
+
+@app.route('/order/<int:order_id>')
+@login_required
+def view_order_detail(order_id):
+    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first()
+    if not order:
+        return "Không tìm thấy đơn hàng.", 404
+    return render_template('order_detail.html', order=order)
+
+@app.route('/my-orders')
+@login_required
+def my_orders():
+    if current_user.role != UserRole.RESTAURANT:
+        return "Bạn không có quyền truy cập!", 403
+
+    # Lấy danh sách nhà hàng thuộc user này
+    restaurants = Restaurant.query.filter_by(user_id=current_user.id).all()
+    restaurant_ids = [r.id for r in restaurants]
+
+    # Lấy đơn hàng thuộc các nhà hàng đó
+    orders = Order.query.filter(Order.restaurant_id.in_(restaurant_ids)) \
+                        .order_by(Order.created_at.desc()).all()
+
+    return render_template('restaurant_orders.html', orders=orders)
+
+@app.route('/update-order-status/<int:order_id>', methods=['POST'])
+@login_required
+def update_order_status(order_id):
+    if current_user.role.name != 'RESTAURANT':
+        flash("Không có quyền.", "danger")
+        return redirect(url_for('restaurant_orders'))
+
+    order = Order.query.get_or_404(order_id)
+
+    # Lấy danh sách id nhà hàng của user
+    user_restaurant_ids = [r.id for r in current_user.restaurants]
+
+    # Kiểm tra đơn hàng có thuộc nhà hàng của user hay không
+    if order.restaurant_id not in user_restaurant_ids:
+        flash("Không thể sửa đơn hàng không thuộc nhà hàng bạn.", "danger")
+        return redirect(url_for('restaurant_orders'))
+
+    # Lấy trạng thái mới từ form
+    new_status = request.form.get('status')
+    try:
+        order.status = OrderStatus[new_status]
+        db.session.commit()
+        flash("Cập nhật trạng thái thành công.", "success")
+    except KeyError:
+        flash("Trạng thái không hợp lệ.", "danger")
+
+    return redirect(url_for('my_orders'))
+
+
+from pytz import timezone, utc
+
+
+@app.template_filter('vntime')
+def vntime(utc_dt, fmt='%d/%m/%Y %H:%M'):
+    if not utc_dt:
+        return ''
+
+    # Gắn timezone UTC nếu chưa có (naive datetime)
+    if utc_dt.tzinfo is None:
+        utc_dt = utc.localize(utc_dt)
+
+    vn = timezone('Asia/Ho_Chi_Minh')
+    return utc_dt.astimezone(vn).strftime(fmt)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
@@ -397,7 +522,6 @@ def profile():
     return render_template('profile.html', user=user, tab=tab, orders=orders,
                            error_msg=error_msg, success_msg=success_msg)
 
-
 @app.route('/menu_item/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_menu_item(item_id):
@@ -445,7 +569,6 @@ def edit_restaurant(restaurant_id):
 
     return render_template('edit_restaurant.html', restaurant=restaurant)
 
-
 @app.route('/menu_item/delete/<int:item_id>', methods=['POST'])
 @login_required
 def delete_menu_item(item_id):
@@ -463,10 +586,16 @@ def delete_restaurant(restaurant_id):
     flash('Xóa nhà hàng thành công.', 'success')
     return redirect(url_for('my_restaurant'))
 
-
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
+
+@app.context_processor
+def inject_cart_count():
+    count = 0
+    if current_user.is_authenticated:
+        count = CartItem.query.filter_by(user_id=current_user.id).count()
+    return dict(cart_count=count)
 
 
 if __name__ == '__main__':

@@ -8,23 +8,27 @@
              class="card-img-top" style="height: 400px; object-fit: cover;">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center">
-                <h2 class="display-5 fw-bold">{{ restaurant.name }}</h2>
-                <p class="text-muted">{{ restaurant.description }}</p>
-                <p class="text-muted">{{ restaurant.address }}</p>
+                <div>
+                    <h2 class="display-5 fw-bold">{{ restaurant.name }}</h2>
+                    <p class="text-muted mb-1">{{ restaurant.description }}</p>
+                    <p class="text-muted mb-0">{{ restaurant.address }}</p>
+                </div>
 
-<!--                {% if restaurant.rating %}-->
-<!--                <span class="fs-4 fw-bold d-flex align-items-center">-->
-<!--                        <i class="fas fa-star text-warning me-2"></i> {{ restaurant.rating }}-->
-<!--                    </span>-->
-<!--                {% endif %}-->
+                {% if average_rating %}
+                <div class="text-end">
+        <span class="fs-4 fw-bold text-warning d-block">
+            ★ {{ average_rating }}
+        </span>
+                </div>
+                {% endif %}
             </div>
-<!--            {% if restaurant.discount %}-->
-<!--            <div class="mt-2">-->
-<!--                    <span class="badge bg-danger-subtle text-danger-emphasis fs-6">-->
-<!--                        <i class="fas fa-tag me-1"></i> Giảm {{ restaurant.discount }}%-->
-<!--                    </span>-->
-<!--            </div>-->
-<!--            {% endif %}-->
+            <!--            {% if restaurant.discount %}-->
+            <!--            <div class="mt-2">-->
+            <!--                    <span class="badge bg-danger-subtle text-danger-emphasis fs-6">-->
+            <!--                        <i class="fas fa-tag me-1"></i> Giảm {{ restaurant.discount }}%-->
+            <!--                    </span>-->
+            <!--            </div>-->
+            <!--            {% endif %}-->
         </div>
     </div>
 
@@ -48,14 +52,63 @@
                     </div>
                 </div>
                 <a href="{{ url_for('add_to_cart', menu_id=item.id) }}"
-   class="btn btn-outline-success fw-bold">
-   Thêm
-</a>
+                   class="btn btn-outline-success fw-bold">
+                    Thêm
+                </a>
 
             </div>
         </div>
         {% endfor %}
     </div>
+    {% if current_user.is_authenticated and has_ordered %}
+    <div class="mt-4">
+        <h3 class="display-6 fw-bold mb-4">Đánh giá nhà hàng</h3>
+        <form method="post" action="{{ url_for('submit_review', restaurant_id=restaurant.id) }}"
+              class="card card-body shadow-sm border-0">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Chọn số sao</label>
+                <div class="rating">
+                    {% for i in range(5, 0, -1) %}
+                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" required>
+                    <label for="star{{ i }}">★</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="comment" class="form-label fw-semibold">Nhận xét</label>
+                <textarea name="comment" id="comment" class="form-control" rows="3"
+                          placeholder="Nhận xét của bạn..."></textarea>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-success fw-semibold">Gửi đánh giá</button>
+            </div>
+        </form>
+    </div>
+    {% elif current_user.is_authenticated %}
+    <div class="alert alert-warning mt-4">
+        Bạn cần đặt hàng từ nhà hàng này trước khi đánh giá.
+    </div>
+    {% endif %}
+
+
+    {% if restaurant.reviews %}
+    <div class="mt-5">
+        <h5 class="fw-bold mb-3">Đánh giá từ khách hàng</h5>
+        {% for r in restaurant.reviews %}
+        <div class="card card-body shadow-sm border-0 mt-2 position-relative">
+            <div class="d-flex justify-content-between">
+                <strong>{{ r.user.name }}</strong>
+                <span class="text-warning fs-5">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</span>
+            </div>
+            <p class="mb-0 mt-2">{{ r.comment }}</p>
+            <i class="text-muted position-absolute end-0 bottom-0 me-3 mb-2">
+                {{ r.created_at | vntime('%H:%M %d-%m-%Y') }}
+            </i>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
 </div>
 
 {% endblock %}

@@ -88,11 +88,21 @@ body {
        .timeline-item.active .timeline-icon { background: #198754; color: white; }
         .timeline-body { margin-left: 60px; padding: 5px 15px; border-radius: 6px; }
 
-        /* Rating Stars */
-        .rating-stars i {
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .rating-stars i.fas {
-            color: #ffc107;
-        }
+        .rating {
+        direction: rtl;
+        display: inline-flex;
+        justify-content: center;
+    }
+    .rating input {
+        display: none;
+    }
+    .rating label {
+        font-size: 2rem;
+        color: #ccc;
+        cursor: pointer;
+    }
+    .rating input:checked ~ label,
+    .rating label:hover,
+    .rating label:hover ~ label {
+        color: gold;
+    }

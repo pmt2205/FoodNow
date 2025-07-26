@@ -1,10 +1,14 @@
 import hashlib
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from foodnow import db, app
 from enum import Enum as RoleEnum
 from enum import Enum as RestaurantStatusEnum
+from enum import Enum as StatusEnum
 from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy.types import Enum as SQLAlchemyEnum
@@ -12,9 +16,10 @@ from sqlalchemy.types import Enum as SQLAlchemyEnum
 
 # Vai trò người dùng
 class UserRole(RoleEnum):
-    ADMIN = 1
-    CUSTOMER = 2
-    RESTAURANT = 3
+    ADMIN = "ADMIN"
+    CUSTOMER = "CUSTOMER"
+    RESTAURANT = "RESTAURANT"
+
 
 class BaseModel(db.Model):
     __abstract__ = True
@@ -34,9 +39,8 @@ class User(BaseModel, UserMixin):
     # Quan hệ
     orders = relationship('Order', backref='user', lazy=True)
     cart = relationship('CartItem', backref='user', lazy=True)
-    comments = relationship('Comment', backref='user', lazy=True)
     restaurants = relationship('Restaurant', backref='owner', lazy=True)
-
+    reviews = db.relationship('Review', back_populates='user', lazy=True)
     def __str__(self):
         return self.name
 
@@ -55,10 +59,9 @@ class Restaurant(BaseModel):
     description = Column(String(255), nullable=True)
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     status = Column(SQLAlchemyEnum(RestaurantStatus, name="restaurant_status"), default=RestaurantStatus.PENDING)
-
+    reviews = db.relationship('Review', back_populates='restaurant', lazy=True)
     menu_items = relationship('MenuItem', backref='restaurant', lazy=True)
     orders = relationship('Order', backref='restaurant', lazy=True)
-    comments = relationship('Comment', backref='restaurant', lazy=True)
 
     def __str__(self):
         return self.name
@@ -102,12 +105,17 @@ class CartItem(BaseModel):
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name}"
 
+
+class OrderStatus(StatusEnum):
+    PENDING = 'Đang xử lý'
+    COMPLETED = 'Hoàn tất'
+    CANCELLED = 'Đã hủy'
 # Đơn hàng
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id))
     restaurant_id = db.Column(db.Integer, db.ForeignKey(Restaurant.id))
-    status = db.Column(db.String(50))
+    status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     total = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     address = db.Column(db.String(255))
@@ -126,23 +134,25 @@ class OrderDetail(BaseModel):
     price = Column(Float, nullable=False)  # Đơn giá tại thời điểm đặt
 
     order_id = Column(Integer, ForeignKey('order.id'), nullable=False)
-    menu_item_id = Column(Integer, ForeignKey('menu_item.id'), nullable=False)
+    menu_item_id = Column(Integer, ForeignKey('menu_item.id', ondelete='SET NULL'), nullable=True)
 
     def __str__(self):
         return f"{self.quantity} x {self.menu_item.name} = {self.price * self.quantity}"
 
 # Bình luận / Đánh giá
-class Comment(BaseModel):
-    __tablename__ = 'comment'
-    content = Column(String(255), nullable=False)
-    rating = Column(Integer, default=5)  # Số sao (1–5)
-    created_date = Column(DateTime, default=datetime.now)
+class Review(BaseModel):
+    __tablename__ = 'review'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
-    restaurant_id = Column(Integer, ForeignKey('restaurant.id'), nullable=False)
 
-    def __str__(self):
-        return f"{self.user.name}: {self.content} ({self.rating}⭐)"
+    user = relationship('User', back_populates='reviews')
+    restaurant = relationship('Restaurant', back_populates='reviews')
+
+
 
 if __name__ == '__main__':
     with app.app_context():
@@ -166,6 +176,14 @@ if __name__ == '__main__':
         )
         db.session.add(user)
 
+        user1 = User(
+            name='Nguyen Van A',
+            username='res1',
+            password=hashlib.md5('123'.encode('utf-8')).hexdigest(),
+            role=UserRole.RESTAURANT
+        )
+        db.session.add(user1)
+
 
         # Tạo danh mục món ăn
         cat_viet = Category(name='Món Việt')
@@ -181,7 +199,7 @@ if __name__ == '__main__':
             phone='0123456789',
             image='...',
             description='Chuyên món Việt truyền thống',
-            user_id=admin.id
+            user_id=user1.id
         )
 
         db.session.add(nha_hang)

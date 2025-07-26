@@ -7,87 +7,86 @@
         <div class="col-lg-8">
             <div id="cart-items-container" class="d-flex flex-column gap-3">
                 {% if not cart %}
-                    <div class="card card-body">
-                        <p class="mb-0">Giỏ hàng của bạn đang trống.</p>
-                    </div>
+                <div class="card card-body">
+                    <p class="mb-0">Giỏ hàng của bạn đang trống.</p>
+                </div>
                 {% else %}
-                    {% for item in cart %}
-                        <div class="card card-body">
-                            <div class="row align-items-center">
-                                <div class="col-md-5 d-flex align-items-center">
-                                    <img src="{{ item.menu_item.image }}"
-                                         onerror="this.onerror=null;this.src='https://placehold.co/80x80/cccccc/ffffff?text=N/A';"
-                                         class="rounded me-3"
-                                         style="width: 80px; height: 80px; object-fit: cover;">
-                                    <div>
-                                        <h5 class="fw-bold mb-1">{{ item.menu_item.name }}</h5>
-                                        {% if item.note %}
-                                            <p class="text-muted small mb-1">Ghi chú: {{ item.note }}</p>
-                                        {% endif %}
-                                        {% if item.extras %}
-                                            <p class="text-primary small mb-0">
-                                                {{ item.extras|join(', ') }}
-                                            </p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="col-md-7 d-flex align-items-center justify-content-end">
-                                    <div class="input-group me-3" style="width: 120px;">
-                                        <a href="{{ url_for('update_cart_quantity', cart_id=item.id, change=-1) }}"
-                                           class="btn btn-outline-secondary">-</a>
-                                        <span class="form-control text-center fw-bold">{{ item.quantity }}</span>
-                                        <a href="{{ url_for('update_cart_quantity', cart_id=item.id, change=1) }}"
-                                           class="btn btn-outline-secondary">+</a>
-                                    </div>
-                                    <span class="fw-bold me-3" style="width: 100px;">
-                                        {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity) }}
-                                    </span>
-                                    <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}"
-                                       class="btn btn-outline-danger"><i class="fas fa-trash-alt"></i></a>
-                                </div>
+                {% for item in cart %}
+                <div class="card card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-5 d-flex align-items-center">
+                            <img src="{{ item.menu_item.image }}"
+                                 onerror="this.onerror=null;this.src='https://placehold.co/80x80/cccccc/ffffff?text=N/A';"
+                                 class="rounded me-3"
+                                 style="width: 80px; height: 80px; object-fit: cover;">
+                            <div>
+                                <h5 class="fw-bold mb-1">{{ item.menu_item.name }}</h5>
+                                {% if item.note %}
+                                <p class="text-muted small mb-1">Ghi chú: {{ item.note }}</p>
+                                {% endif %}
+                                {% if item.extras %}
+                                <p class="text-primary small mb-0">
+                                    {{ item.extras|join(', ') }}
+                                </p>
+                                {% endif %}
                             </div>
                         </div>
-                    {% endfor %}
+                        <div class="col-md-7 d-flex align-items-center justify-content-end">
+                            <div class="input-group me-3" style="width: 120px;">
+                                <a href="{{ url_for('update_cart_quantity', cart_id=item.id, change=-1) }}"
+                                   class="btn btn-outline-secondary">-</a>
+                                <span class="form-control text-center fw-bold">{{ item.quantity }}</span>
+                                <a href="{{ url_for('update_cart_quantity', cart_id=item.id, change=1) }}"
+                                   class="btn btn-outline-secondary">+</a>
+                            </div>
+                            <span class="fw-bold me-3" style="width: 100px;">
+                                        {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity) }}
+                                    </span>
+                            <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}"
+                               class="btn btn-outline-danger"><i class="fas fa-trash-alt"></i></a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
                 {% endif %}
             </div>
         </div>
 
         <div class="col-lg-4">
-    <div class="card card-body shadow-sm">
-        <h3 class="fw-bold mb-3">Tổng cộng</h3>
-        <form action="{{ url_for('checkout') }}" method="POST">
-            <div class="mb-3">
-                <label class="form-label">Địa chỉ nhận hàng</label>
-                <input type="text" name="address" class="form-control" required
-                       value="{{ current_user.address if current_user.address else '' }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Số điện thoại</label>
-                <input type="tel" name="phone" class="form-control" required
-                       value="{{ current_user.phone if current_user.phone else '' }}">
-            </div>
+            <div class="card card-body shadow-sm">
+                <h3 class="fw-bold mb-3">Tổng cộng</h3>
+                <form id="checkout-form" action="{{ url_for('checkout') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Địa chỉ nhận hàng</label>
+                        <input type="text" name="address" class="form-control" required
+                               value="{{ current_user.address if current_user.address else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="tel" name="phone" class="form-control" required
+                               value="{{ current_user.phone if current_user.phone else '' }}">
+                    </div>
 
-            <div class="d-flex justify-content-between mb-2">
-                <span>Tạm tính</span>
-                <span>{{ '{:,.0f} đ'.format(total_price) }}</span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span>Phí vận chuyển</span>
-                <span>{{ '{:,.0f} đ'.format(shipping_fee) }}</span>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
-                <span>Tổng cộng</span>
-                <span>{{ '{:,.0f} đ'.format(total_price + shipping_fee) }}</span>
-            </div>
-        </form>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tạm tính</span>
+                        <span>{{ '{:,.0f} đ'.format(total_price) }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
+                        <span>Tổng cộng</span>
+                        <span>{{ '{:,.0f} đ'.format(total_price) }}</span>
+                    </div>
 
-        <div class="d-grid mt-2">
-            <a href="/pay/momo" class="btn btn-success w-100 mb-2">Thanh toán qua Momo</a>
-            <a href="/pay/zalopay" class="btn btn-info w-100">Thanh toán qua ZaloPay</a>
+                    <div class="d-grid mt-2">
+                        <button type="submit" class="btn btn-primary w-100"
+                                onclick="return confirm('Bạn có chắc chắn muốn đặt hàng không?')">
+                            Xác nhận đặt hàng
+                        </button>
+                    </div>
+                </form>
+
+            </div>
         </div>
-    </div>
-</div>
 
     </div>
 </div>

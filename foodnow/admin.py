@@ -5,7 +5,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from flask import redirect
 from wtforms import SelectField
-from foodnow.models import RestaurantStatus  # import Enum RestaurantStatus của bạn
+from foodnow.models import RestaurantStatus
 
 
 class MyAdminIndexView(AdminIndexView):
@@ -68,6 +68,7 @@ class MenuItemView(AdminView):
             raise ValueError("Nhà hàng này chưa được duyệt. Không thể tạo món ăn.")
         return super().on_model_change(form, model, is_created)
 
+from wtforms import SelectField
 
 class UserView(AdminView):
     column_list = ['username', 'name', 'phone', 'role']
@@ -79,6 +80,17 @@ class UserView(AdminView):
         'phone': 'Số Điện Thoại',
         'role': 'Vai Trò'
     }
+
+    form_overrides = {
+        'role': SelectField
+    }
+
+    form_args = {
+        'role': {
+            'choices': [(role.value, role.value) for role in UserRole]
+        }
+    }
+
 
 class OrderView(AdminView):
     column_list = ['user_id', 'restaurant_id', 'status', 'created_at']

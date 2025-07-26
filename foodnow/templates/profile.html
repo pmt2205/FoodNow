@@ -29,106 +29,105 @@
         </div>
 
         <div class="col-md-9">
-    <div class="card card-body shadow-sm p-4">
+            <div class="card card-body shadow-sm p-4">
 
-        {% if tab == 'info' %}
-        <h3 class="fw-bold mb-4">Chỉnh sửa thông tin</h3>
-        {% if success_msg %}
-        <div class="alert alert-success">{{ success_msg }}</div>
-        {% elif error_msg %}
-        <div class="alert alert-danger">{{ error_msg }}</div>
-        {% endif %}
+                {% if tab == 'info' %}
+                <h3 class="fw-bold mb-4">Chỉnh sửa thông tin</h3>
+                {% if success_msg %}
+                <div class="alert alert-success">{{ success_msg }}</div>
+                {% elif error_msg %}
+                <div class="alert alert-danger">{{ error_msg }}</div>
+                {% endif %}
 
-        <form class="row g-3" method="POST" enctype="multipart/form-data">
-            <div class="col-md-6">
-                <label class="form-label">Họ và tên</label>
-                <input type="text" name="name" value="{{ user.name }}" class="form-control" required>
+                <form class="row g-3" method="POST" enctype="multipart/form-data">
+                    <div class="col-md-6">
+                        <label class="form-label">Họ và tên</label>
+                        <input type="text" name="name" value="{{ user.name }}" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Ngày sinh</label>
+                        <input type="date" name="dob" value="{{ user.dob if user.dob else '' }}" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="tel" name="phone" value="{{ user.phone }}" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="email" value="{{ user.address }}" class="form-control bg-light" readonly>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Avatar</label>
+                        <input type="file" name="avatar" class="form-control">
+                    </div>
+
+                    <div class="col-12 text-end mt-4">
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+
+                {% elif tab == 'security' %}
+                <h3 class="fw-bold mb-4">Đổi mật khẩu</h3>
+                {% if success_msg %}
+                <div class="alert alert-success">{{ success_msg }}</div>
+                {% elif error_msg %}
+                <div class="alert alert-danger">{{ error_msg }}</div>
+                {% endif %}
+
+                <form class="row g-3" method="POST">
+                    <div class="col-md-12">
+                        <label class="form-label">Mật khẩu cũ</label>
+                        <input type="password" name="old_password" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Mật khẩu mới</label>
+                        <input type="password" name="new_password" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Xác nhận mật khẩu mới</label>
+                        <input type="password" name="confirm_password" class="form-control" required>
+                    </div>
+
+                    <div class="col-12 text-end mt-4">
+                        <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+                    </div>
+                </form>
+
+                {% elif tab == 'orders' %}
+                <h3 class="fw-bold mb-4">Đơn hàng của tôi</h3>
+                <div class="d-flex flex-column gap-3">
+                    {% if orders %}
+                    {% for order in orders|sort(attribute='id', reverse=True) %}
+                    <div class="card card-body order-card" role="button"
+                         onclick="window.location='{{ url_for('view_order_detail', order_id=order.id) }}'">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="fw-bold mb-1">Đơn hàng #{{ order.id }}</h5>
+                                <p class="text-muted small mb-0">Ngày đặt: {{ order.created_at | vntime('%H:%M
+                                    %d-%m-%Y') }}</p>
+                            </div>
+                            <div class="text-end">
+                                <p class="fw-bold fs-5 mb-1">{{ '{:,.0f} đ'.format(order.total) }}</p>
+                                <span class="order-status {{ order.status|lower|replace(' ', '-') }}">
+                            {{ order.status.value }}
+                        </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p>Bạn chưa có đơn hàng nào.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Ngày sinh</label>
-                <input type="date" name="dob" value="{{ user.dob if user.dob else '' }}" class="form-control">
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Số điện thoại</label>
-                <input type="tel" name="phone" value="{{ user.phone }}" class="form-control">
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Địa chỉ</label>
-                <input type="email" value="{{ user.address }}" class="form-control bg-light" readonly>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Avatar</label>
-                <input type="file" name="avatar" class="form-control">
-            </div>
-
-            <div class="col-12 text-end mt-4">
-                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-            </div>
-        </form>
-
-        {% elif tab == 'security' %}
-        <h3 class="fw-bold mb-4">Đổi mật khẩu</h3>
-        {% if success_msg %}
-        <div class="alert alert-success">{{ success_msg }}</div>
-        {% elif error_msg %}
-        <div class="alert alert-danger">{{ error_msg }}</div>
-        {% endif %}
-
-        <form class="row g-3" method="POST">
-            <div class="col-md-12">
-                <label class="form-label">Mật khẩu cũ</label>
-                <input type="password" name="old_password" class="form-control" required>
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label">Mật khẩu mới</label>
-                <input type="password" name="new_password" class="form-control" required>
-            </div>
-
-            <div class="col-md-12">
-                <label class="form-label">Xác nhận mật khẩu mới</label>
-                <input type="password" name="confirm_password" class="form-control" required>
-            </div>
-
-            <div class="col-12 text-end mt-4">
-                <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
-            </div>
-        </form>
-
-        {% elif tab == 'orders' %}
-        <h3 class="fw-bold mb-4">Đơn hàng của tôi</h3>
-        {% if orders %}
-        <table class="table">
-            <thead>
-            <tr>
-                <th>Mã đơn</th>
-                <th>Ngày đặt</th>
-                <th>Trạng thái</th>
-                <th>Tổng tiền</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
-                <td>{{ order.status }}</td>
-                <td>{{ order.total }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>Bạn chưa có đơn hàng nào.</p>
-        {% endif %}
-        {% endif %}
-
-    </div>
-</div>
+        </div>
 
     </div>
 </div>

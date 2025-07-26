@@ -1,0 +1,65 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <h3 class="fw-bold mb-4">Đơn hàng của nhà hàng bạn</h3>
+
+    <div class="d-flex flex-column gap-3">
+        {% if orders %}
+        {% for order in orders|sort(attribute='id', reverse=True) %}
+        <div class="card card-body order-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="w-75 pe-4">
+                    <h5 class="fw-bold mb-1">Đơn hàng #{{ order.id }}</h5>
+                    <p class="mb-1"><strong>Khách:</strong> {{ order.user.name }}</p>
+                    <p class="mb-1"><strong>SĐT:</strong> {{ order.phone }}</p>
+                    <p class="mb-1"><strong>Địa chỉ:</strong> {{ order.address }}</p>
+                    <p class="text-muted small mb-3">
+                        Ngày đặt: {{ order.created_at | vntime('%H:%M %d-%m-%Y') }}
+                    </p>
+
+                    <div>
+                        <strong>Chi tiết món ăn:</strong>
+                        <ul class="mb-0">
+                            {% for item in order.details %}
+                            <li>
+                                {{ item.menu_item.name }} — SL: {{ item.quantity }} × {{ '{:,.0f} đ'.format(item.price) }}
+                                = <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity) }}</strong>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="text-end w-25">
+                    <p class="fw-bold fs-5 mb-1">{{ '{:,.0f} đ'.format(order.total) }}</p>
+
+                    <form method="post" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-inline">
+                        <div class="input-group input-group-sm">
+                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                {% for s in ['PENDING', 'COMPLETED', 'CANCELLED'] %}
+                                <option value="{{ s }}" {% if order.status.name == s %}selected{% endif %}>
+                                    {{ {
+                                        'PENDING': 'Đang xử lý',
+                                        'COMPLETED': 'Hoàn tất',
+                                        'CANCELLED': 'Đã hủy'
+                                    }[s] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+
+                    <span class="badge bg-secondary mt-2">
+                        {{ order.status.value }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>Hiện chưa có đơn hàng nào.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
