@@ -271,7 +271,7 @@ def add_to_cart(menu_id):
 
     db.session.commit()
 
-    # ✅ Nếu dùng AJAX bạn có thể return JSON tại đây
+    # Nếu dùng AJAX bạn có thể return JSON tại đây
     # return jsonify({'new_item': is_new_item, 'cart_count': CartItem.query.filter_by(user_id=current_user.id).count()})
 
     return redirect(url_for('view_cart'))
