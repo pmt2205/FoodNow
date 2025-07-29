@@ -2,6 +2,7 @@ import sys, os, utils, requests, uuid, hmac, hashlib
 from datetime import datetime
 from sqlalchemy.sql import func
 
+from pytz import timezone, utc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from foodnow import app, db, login
@@ -396,7 +397,6 @@ def update_order_status(order_id):
     return redirect(url_for('my_orders'))
 
 
-from pytz import timezone, utc
 
 
 @app.template_filter('vntime')
