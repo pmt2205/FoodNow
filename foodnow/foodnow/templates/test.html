@@ -1,0 +1,146 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <form action="{{ url_for('search') }}" method="get" class="row g-3 mb-5">
+  <div class="col-md-3">
+    <input type="text" name="keyword" class="form-control" placeholder="Từ khóa (món ăn hoặc nhà hàng)">
+  </div>
+  <div class="col-md-2">
+    <input type="number" name="price_from" class="form-control" placeholder="Giá từ">
+  </div>
+  <div class="col-md-2">
+    <input type="number" name="price_to" class="form-control" placeholder="Giá đến">
+  </div>
+  <div class="col-md-3">
+    <input type="text" name="address" class="form-control" placeholder="Địa chỉ nhà hàng">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-success w-100" type="submit">Tìm kiếm</button>
+  </div>
+</form>
+
+
+    {% if query %}
+        <h4 class="mb-3">Kết quả cho: "<strong>{{ query }}</strong>"</h4>
+    {% endif %}
+
+{% if menu_items %}
+<h4 class="mt-4">🍲 Món ăn tìm được:</h4>
+<div class="row">
+    {% for item in menu_items %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <img src="{{ item.image }}" class="card-img-top" alt="{{ item.name }}"
+                 style="height: 200px; object-fit: cover;">
+            <div class="card-body">
+                <h5 class="card-title">{{ item.name }}</h5>
+                <p class="card-text">{{ item.description }}</p>
+                <p class="fw-bold text-success">{{ "{:,.0f}".format(item.price) }} VNĐ</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if restaurants %}
+<h4 class="mt-5">🏠 Nhà hàng tìm được:</h4>
+<div class="row">
+    {% for res in restaurants %}
+    <div class="col-md-4 mb-4">
+        <a href="{{ url_for('view_menu', rid=res.id) }}" class="text-decoration-none text-dark">
+            <div class="card h-100 shadow-sm">
+                <img src="{{ res.image }}" class="card-img-top" alt="{{ res.name }}"
+                     style="height: 200px; object-fit: cover;">
+                <div class="card-body">
+                    <h5 class="card-title">{{ res.name }}</h5>
+                    <p class="card-text">{{ res.description }}</p>
+                    <p class="text-muted">{{ res.address }}</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if not menu_items and not restaurants %}
+<p class="text-muted mt-5">Không tìm thấy kết quả phù hợp.</p>
+{% endif %}
+
+
+
+    {% if not restaurants and not menu_items and query %}
+        <p class="text-muted">Không tìm thấy kết quả phù hợp với từ khóa "{{ query }}"</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="display-5 fw-bold mb-4">Khám phá món ăn</h2>
+
+    <form method="get" action="{{ url_for('search') }}">
+        <input name="keyword" type="text" placeholder="Tìm nhà hàng hoặc món ăn..." value="{{ request.args.get('keyword', '') }}" class="form-control form-control-lg mb-5">
+    </form>
+
+    <!-- Danh mục món ăn -->
+    <div class="d-flex justify-content-center text-center flex-wrap gap-3 gap-md-4 mb-5">
+        {% for c in categories %}
+        <div>
+            <button class="category-icon d-flex align-items-center justify-content-center bg-white shadow-sm fs-2 text-muted" data-category-id="{{ c.id }}">
+                <i class="{{ c.icon }}"></i>
+            </button>
+            <p class="mt-2 fw-semibold">{{ c.name }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Nhà hàng -->
+    <div id="restaurant-section">
+        <h3 class="display-6 fw-bold mb-4">Nhà hàng gần bạn</h3>
+        <div class="row g-4">
+            {% if restaurants %}
+                {% for r in restaurants %}
+                <div class="col-md-6 col-lg-4">
+<a href="/restaurant/{{ res.id }}" class="text-decoration-none text-dark">
+    <div class="card h-100 restaurant-card shadow-sm border-0">
+                        <img src="{{ r.image }}" onerror="this.onerror=null;this.src='https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" alt="{{ r.name }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold">{{ r.name }}</h5>
+                            <p class="card-text text-muted">{{ r.address }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-muted col-12">Không tìm thấy nhà hàng phù hợp.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Món ăn -->
+    <div id="all-food-items-section" class="mt-5">
+        <hr class="my-5">
+        <h3 class="display-6 fw-bold mb-4">Tất cả món ăn</h3>
+        <div class="row g-lg-4 g-3">
+            {% for item in menu_items %}
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                <div class="card h-100 food-card shadow-sm border-0">
+                    <img src="{{ item.image }}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" style="height: 150px; object-fit: cover;">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title fw-bold fs-6">{{ item.name }}</h5>
+                        <p class="card-text fw-bold text-success mt-auto">{{ "{:,.0f}".format(item.price) }}₫</p>
+                        <button class="btn btn-sm btn-outline-success fw-bold mt-2">Thêm</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

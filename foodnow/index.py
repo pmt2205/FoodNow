@@ -10,6 +10,16 @@ from flask import render_template, request, redirect, url_for, session, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
 from werkzeug.utils import secure_filename
+from flask_mail import Mail, Message
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'nguyenphu1999f@gmail.com'         # Thay bằng email của bạn
+app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'            # Mật khẩu ứng dụng (không phải mật khẩu Gmail)
+
+mail = Mail(app)
+
 
 @app.route('/pay/momo')
 @login_required
@@ -310,6 +320,8 @@ def remove_from_cart(cart_id):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
+from flask_mail import Message
+
 @app.route('/checkout', methods=['POST'])
 @login_required
 def checkout():
@@ -329,6 +341,9 @@ def checkout():
     db.session.add(order)
     db.session.commit()
 
+    total = 0
+    content_lines = []
+
     for item in cart:
         detail = OrderDetail(
             order_id=order.id,
@@ -337,10 +352,39 @@ def checkout():
             price=item.menu_item.price
         )
         db.session.add(detail)
+        item_total = item.quantity * item.menu_item.price
+        total += item_total
+        content_lines.append(f"{item.menu_item.name} x {item.quantity} = {item_total:,} VNĐ")
 
-    order.calculate_total()
+    order.total = total
+    db.session.commit()
+
+    # Xóa giỏ hàng
     CartItem.query.filter_by(user_id=current_user.id).delete()
     db.session.commit()
+
+    # --- Gửi Email thông báo đơn hàng ---
+    try:
+        msg = Message("Xác nhận đơn hàng - FoodNow",
+                      sender=app.config['MAIL_USERNAME'],
+                      recipients=[current_user.email])
+        msg.body = f"""Chào {current_user.name},
+
+Bạn đã đặt hàng thành công tại FoodNow.
+
+Chi tiết đơn hàng:
+{chr(10).join(content_lines)}
+
+Tổng cộng: {total:,} VNĐ
+Địa chỉ giao hàng: {address}
+Số điện thoại: {phone}
+
+Cảm ơn bạn đã sử dụng dịch vụ!
+        """
+        mail.send(msg)
+    except Exception as e:
+        print("Không gửi được mail:", str(e))
+    flash("Đơn hàng đã được đặt thành công. Vui lòng kiểm tra email để xem chi tiết đơn hàng.", "success")
 
     return redirect(url_for('home'))
 
@@ -458,8 +502,12 @@ def register_process():
                 return render_template('register.html', err_msg=error_msg)
 
             avatar = request.files.get('avatar')
-            utils.add_user(avatar=avatar, **data)
-            return redirect(url_for('login_process'))
+
+            try:
+                utils.add_user(avatar=avatar, **data)  # data sẽ có cả email
+                return redirect(url_for('login_process'))
+            except Exception as ex:
+                error_msg = f'Lỗi khi đăng ký: {ex}'
         else:
             error_msg = 'Mật khẩu xác nhận không khớp!'
 
@@ -477,50 +525,42 @@ def profile():
     error_msg = ''
     success_msg = ''
     orders = []
-
     if request.method == 'POST':
         if tab == 'info':
-            # Xử lý cập nhật thông tin cá nhân
             name = request.form.get('name')
             phone = request.form.get('phone')
             dob = request.form.get('dob')
-            avatar = request.files.get('avatar')
+            email = request.form.get('email', '').strip()
 
-            user.name = name
-            user.phone = phone
-            user.dob = dob
-
-            if avatar and avatar.filename != '':
-                filename = secure_filename(avatar.filename)
-                upload_path = os.path.join('static/images', filename)
-                os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-                avatar.save(upload_path)
-                user.avatar = '/' + upload_path
-
-            db.session.commit()
-            success_msg = 'Cập nhật thông tin thành công!'
-
-        elif tab == 'security':
-            # Xử lý đổi mật khẩu
-            old_password = request.form.get('old_password')
-            new_password = request.form.get('new_password')
-            confirm_password = request.form.get('confirm_password')
-
-            old_hash = hashlib.md5(old_password.encode('utf-8')).hexdigest()
-            if user.password != old_hash:
-                error_msg = 'Mật khẩu cũ không đúng!'
-            elif new_password != confirm_password:
-                error_msg = 'Mật khẩu mới không khớp!'
+            if not email:
+                error_msg = 'Email không được để trống!'
             else:
-                user.password = hashlib.md5(new_password.encode('utf-8')).hexdigest()
-                db.session.commit()
-                success_msg = 'Đổi mật khẩu thành công!'
+                # Kiểm tra email đã được tài khoản khác sử dụng chưa
+                existing_user = User.query.filter(User.email == email, User.id != user.id).first()
+                if existing_user:
+                    error_msg = 'Đã có tài khoản sử dụng địa chỉ email này!'
+                else:
+                    user.name = name
+                    user.phone = phone
+                    user.dob = dob
+                    user.email = email
+
+                    avatar = request.files.get('avatar')
+                    if avatar and avatar.filename != '':
+                        filename = secure_filename(avatar.filename)
+                        upload_path = os.path.join('static/images', filename)
+                        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+                        avatar.save(upload_path)
+                        user.avatar = '/' + upload_path
+
+                    db.session.commit()
+                    success_msg = 'Cập nhật thông tin thành công!'
 
     if tab == 'orders':
         orders = Order.query.filter_by(user_id=user.id).all()
-
     return render_template('profile.html', user=user, tab=tab, orders=orders,
                            error_msg=error_msg, success_msg=success_msg)
+
 
 @app.route('/menu_item/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required

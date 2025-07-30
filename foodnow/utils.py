@@ -19,18 +19,30 @@ def auth_user(username, password, role=None):
 
     return q.first()
 
-def add_user(name, username, password, phone=None, address=None, role='CUSTOMER', avatar=None):
+def add_user(name, username, password, email, phone=None, address=None, role='CUSTOMER', avatar=None):
+    # Mã hóa mật khẩu
     password_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
 
-    user = User(name=name, username=username, password=password_hash,
-                phone=phone, address=address, role=UserRole[role])
+    # Tạo đối tượng người dùng
+    user = User(
+        name=name,
+        username=username,
+        email=email,
+        password=password_hash,
+        phone=phone,
+        address=address,
+        role=UserRole[role]
+    )
 
+    # Nếu có avatar thì upload lên Cloudinary
     if avatar:
         res = cloudinary.uploader.upload(avatar)
         user.avatar = res.get('secure_url')
 
+    # Lưu vào database
     db.session.add(user)
     db.session.commit()
+
 
 
 

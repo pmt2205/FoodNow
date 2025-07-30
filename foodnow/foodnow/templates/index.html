@@ -1,0 +1,1076 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<section id="hero-carousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
+    <div class="carousel-inner">
+        {% for img in hero_images %}
+        <div class="carousel-item {% if loop.index == 1 %}active{% endif %}"
+             style="height: 70vh; background-image: url('{{ img }}'); background-size: cover; background-position: center;">
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Phần chữ và khung tìm kiếm cố định -->
+    <div class="carousel-caption d-flex align-items-center justify-content-center h-100">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 text-center text-lg-start text-white">
+                    <h1 class="display-3 fw-bold">Món ngon yêu thích, <br><span class="word_now text-success-emphasis ">giao tận cửa.</span>
+                    </h1>
+                    <p class="lead my-4">Tìm kiếm, lựa chọn và đặt hàng từ hàng trăm nhà hàng trong khu vực của bạn.
+                        Nhanh chóng, tiện lợi và an toàn.</p>
+                </div>
+                <div class="col-lg-5 offset-lg-1 d-none d-lg-block">
+                    <div class="card p-4 shadow-lg">
+    <div class="card-body">
+        <h3 class="card-title text-center mb-4 text-dark">Tìm món ngon ngay!</h3>
+        <form action="{{ url_for('search') }}" method="get">
+            <input name="keyword" type="text" class="form-control form-control-lg mb-3"
+                   placeholder="Phở, Bún chả, Pizza...">
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search me-2"></i>Tìm kiếm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <button class="carousel-control-prev" type="button" data-bs-target="#hero-carousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#hero-carousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</section>
+
+
+
+<section class="container py-5">
+    <h2 class="display-6 fw-bold text-center mb-5">Nhà hàng nổi bật</h2>
+    <div class="row g-4">
+        {% for res in restaurants[:6] %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('view_menu', rid=res.id) }}" class="text-decoration-none text-dark">
+                <div class="card h-100 restaurant-card shadow-sm border-0" role="button">
+                    <img src="{{ res.image }}"
+                         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop';"
+                         class="card-img-top" alt="{{ res.name }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">{{ res.name }}</h5>
+                        <p class="card-text text-muted">{{ res.description or 'Không có mô tả' }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section id="about-us-section" class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold">Về Chúng Tôi</h2>
+            <p class="lead text-muted">Đội ngũ đam mê mang ẩm thực đến với bạn.</p>
+        </div>
+        <div class="row text-center">
+            <div class="col-md-4">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop"
+                     class="rounded-circle mb-3" width="140" height="140" alt="Founder 1">
+                <h3 class="fw-bold">Lê Hồng Đức</h3>
+                <p>CEO & Founder</p>
+            </div>
+            <div class="col-md-4">
+                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop"
+                     class="rounded-circle mb-3" width="140" height="140" alt="Founder 2">
+                <h3 class="fw-bold">Nguyễn Ngọc Phú</h3>
+                <p>Head of Operations</p>
+            </div>
+            <div class="col-md-4">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop"
+                     class="rounded-circle mb-3" width="140" height="140" alt="Founder 3">
+                <h3 class="fw-bold">Phạm Mạnh Tường</h3>
+                <p>CTO</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="contact-section" class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold">Liên Hệ</h2>
+        <p class="lead text-muted">Chúng tôi luôn sẵn sàng lắng nghe bạn.</p>
+    </div>
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <form id="contact-form" class="row g-3">
+                <div class="col-md-6"><input type="text" class="form-control form-control-lg" placeholder="Tên của bạn"
+                                             required></div>
+                <div class="col-md-6"><input type="email" class="form-control form-control-lg" placeholder="Email"
+                                             required></div>
+                <div class="col-12"><textarea class="form-control form-control-lg" rows="5" placeholder="Lời nhắn"
+                                              required></textarea></div>
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary btn-lg">Gửi Tin Nhắn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+
+
+<!--<script>-->
+<!--    document.addEventListener('DOMContentLoaded', () => {-->
+<!--        // -&#45;&#45; MOCK DATA -&#45;&#45;-->
+<!--        const restaurants = [-->
+<!--            // Vietnamese-->
+<!--            { id: 1, name: 'Phở Thìn', category: 'vietnamese', distance: '1.2 km', image: 'https://images.unsplash.com/photo-1569718212165-d323cc468994?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 101, name: 'Phở Tái Lăn', price: 60000, image: 'https://images.unsplash.com/photo-1569718212165-d323cc468994?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 102, name: 'Phở Nạm Gầu', price: 55000, image: 'https://images.unsplash.com/photo-1627309302198-09a50ae1821c?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 103, name: 'Quẩy', price: 5000, image: 'https://images.unsplash.com/photo-1598866763254-f523b63259ae?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 2, name: 'Bún Chả Hương Liên', category: 'vietnamese', distance: '2.5 km', image: 'https://images.unsplash.com/photo-1526318896980-cf78c0882475?q=80&w=800&auto=format&fit=crop', rating: 4.9, menu: [-->
+<!--                { id: 201, name: 'Suất Bún Chả Đặc Biệt', price: 60000, image: 'https://images.unsplash.com/photo-1526318896980-cf78c0882475?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 202, name: 'Nem Cua Bể', price: 15000, image: 'https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 203, name: 'Trà Đá', price: 5000, image: 'https://images.unsplash.com/photo-1594212699903-ec8a6d79a94b?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 3, name: 'Cơm Tấm Cali', category: 'vietnamese', distance: '0.8 km', image: 'https://images.unsplash.com/photo-1596199447995-a7953f9156d3?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 301, name: 'Cơm Tấm Sườn Bì Chả', price: 65000, image: 'https://images.unsplash.com/photo-1596199447995-a7953f9156d3?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 302, name: 'Canh Khổ Qua', price: 20000, image: 'https://images.unsplash.com/photo-1604111782539-583d1824f4e7?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 303, name: 'Sườn Cây Nướng Thêm', price: 45000, image: 'https://images.unsplash.com/photo-1626082896498-4352a56a45dc?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 4, name: 'Bánh Mì Huynh Hoa', category: 'vietnamese', distance: '3.1 km', image: 'https://images.unsplash.com/photo-1567234661513-02a5f2438b4a?q=80&w=800&auto=format&fit=crop', rating: 4.8, menu: [-->
+<!--                { id: 401, name: 'Bánh Mì Đặc Biệt', price: 58000, image: 'https://images.unsplash.com/photo-1567234661513-02a5f2438b4a?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 402, name: 'Bánh Mì Bì', price: 35000, image: 'https://images.unsplash.com/photo-1592415486689-83a2f891e33c?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            // Japanese-->
+<!--            { id: 6, name: 'Sushi World', category: 'japanese', distance: '1.5 km', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=800&auto=format&fit=crop', rating: 4.7, menu: [-->
+<!--                { id: 601, name: 'Sashimi Combo', price: 350000, image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 602, name: 'California Roll', price: 120000, image: 'https://images.unsplash.com/photo-1553621042-f6e147245754?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 603, name: 'Miso Soup', price: 30000, image: 'https://images.unsplash.com/photo-1591120583696-7f6b835456f4?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 7, name: 'Ramen Marutomo', category: 'japanese', distance: '2.2 km', image: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 701, name: 'Tonkotsu Ramen', price: 150000, image: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 702, name: 'Miso Ramen', price: 145000, image: 'https://images.unsplash.com/photo-1612929028848-1c213569a334?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 703, name: 'Gyoza', price: 65000, image: 'https://images.unsplash.com/photo-1624561081683-55823055b882?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            // Korean-->
+<!--            { id: 9, name: 'Gogi House', category: 'korean', distance: '1.8 km', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop', rating: 4.8, menu: [-->
+<!--                { id: 901, name: 'Combo Nướng 2 người', price: 499000, image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 902, name: 'Canh Kim Chi', price: 89000, image: 'https://images.unsplash.com/photo-1582576324499-0d358895f421?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 903, name: 'Cơm Trộn', price: 99000, image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 10, name: 'Dookki', category: 'korean', distance: '3.5 km', image: 'https://images.unsplash.com/photo-1631815551859-86b611803d15?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 1001, name: 'Buffet Tokbokki', price: 139000, image: 'https://images.unsplash.com/photo-1631815551859-86b611803d15?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1002, name: 'Vòng Phô Mai', price: 69000, image: 'https://images.unsplash.com/photo-1586795243433-2473114353c9?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            // Italian-->
+<!--            { id: 11, name: 'Pizza 4P\'s', category: 'italian', distance: '2.0 km', image: 'https://images.unsplash.com/photo-1594007654729-407eedc4be65?q=80&w=800&auto=format&fit=crop', rating: 4.9, menu: [-->
+<!--                { id: 1101, name: 'Pizza Burrata', price: 280000, image: 'https://images.unsplash.com/photo-1594007654729-407eedc4be65?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1102, name: 'Mỳ Ý Cua', price: 250000, image: 'https://images.unsplash.com/photo-1611270629569-8b357cb8a1a0?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1103, name: 'Salad Rocket', price: 110000, image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 12, name: 'Ciao Bella', category: 'italian', distance: '4.5 km', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 1201, name: 'Spaghetti Carbonara', price: 180000, image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1202, name: 'Steak Bò Úc', price: 450000, image: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1203, name: 'Tiramisu', price: 90000, image: 'https://images.unsplash.com/photo-1571115332230-d9d68b7859a2?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            // Fast Food-->
+<!--            { id: 13, name: 'McDonald\'s', category: 'fast-food', distance: '0.5 km', image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 1301, name: 'Big Mac', price: 89000, image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1302, name: 'Khoai Tây Chiên (L)', price: 35000, image: 'https://images.unsplash.com/photo-1598679253544-2c9740f49df7?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1303, name: 'Gà Rán', price: 40000, image: 'https://images.unsplash.com/photo-1569058242253-92a9c5552db4?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 14, name: 'KFC', category: 'fast-food', distance: '0.7 km', image: 'https://images.unsplash.com/photo-1562967914-608f82629710?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 1401, name: 'Combo Gà Rán 2 người', price: 159000, image: 'https://images.unsplash.com/photo-1562967914-608f82629710?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1402, name: 'Burger Zinger', price: 69000, image: 'https://images.unsplash.com/photo-1551987840-f62d9c7d188e?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1403, name: 'Khoai Tây Nghiền', price: 20000, image: 'https://images.unsplash.com/photo-1599940824147-0373b2841928?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            // Cafe-->
+<!--            { id: 15, name: 'Phúc Long Coffee & Tea', category: 'cafe', distance: '0.3 km', image: 'https://images.unsplash.com/photo-1558160074-2bf87223c393?q=80&w=800&auto=format&fit=crop', rating: 4.7, menu: [-->
+<!--                { id: 1501, name: 'Trà Sữa Phúc Long', price: 55000, image: 'https://images.unsplash.com/photo-1558160074-2bf87223c393?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1502, name: 'Trà Lài Đác Thơm', price: 65000, image: 'https://images.unsplash.com/photo-1597481499564-834242631b1c?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1503, name: 'Bánh Tiramisu', price: 45000, image: 'https://images.unsplash.com/photo-1542326521-3652c5895919?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            { id: 16, name: 'The Coffee House', category: 'cafe', distance: '1.1 km', image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 1601, name: 'Cà Phê Sữa Đá', price: 39000, image: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1602, name: 'Trà Đào Cam Sả', price: 50000, image: 'https://images.unsplash.com/photo-1556742054-c3132adf2183?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 1603, name: 'Bánh Croissant', price: 30000, image: 'https://images.unsplash.com/photo-1530610476181-d83430b64dcd?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--            // Dessert-->
+<!--            { id: 22, name: 'Paris Baguette', category: 'dessert', distance: '1.3 km', image: 'https://images.unsplash.com/photo-1562440102-8619a19999ef?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 2201, name: 'Bánh Pudding', price: 45000, image: 'https://images.unsplash.com/photo-1562440102-8619a19999ef?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 2202, name: 'Bánh Tiramisu', price: 55000, image: 'https://images.unsplash.com/photo-1586985289936-a2a985414383?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--             { id: 25, name: 'Chè Liên', category: 'dessert', distance: '2.6 km', image: 'https://images.unsplash.com/photo-1600326145557-095f756a4c33?q=80&w=800&auto=format&fit=crop', menu: [-->
+<!--                { id: 2501, name: 'Chè Thái Sầu', price: 35000, image: 'https://images.unsplash.com/photo-1600326145557-095f756a4c33?q=80&w=800&auto=format&fit=crop' },-->
+<!--                { id: 2502, name: 'Chè Khúc Bạch', price: 30000, image: 'https://images.unsplash.com/photo-1590846426793-2a4b87a82a47?q=80&w=800&auto=format&fit=crop' }-->
+<!--            ]},-->
+<!--        ];-->
+<!--        const categories = [-->
+<!--            { id: 'all', name: 'Tất cả', icon: 'fas fa-th-large' },-->
+<!--            { id: 'vietnamese', name: 'Món Việt', icon: 'fas fa-pepper-hot' },-->
+<!--            { id: 'japanese', name: 'Món Nhật', icon: 'fas fa-fan' },-->
+<!--            { id: 'korean', name: 'Món Hàn', icon: 'fas fa-bacon' },-->
+<!--            { id: 'italian', name: 'Món Âu', icon: 'fas fa-pizza-slice' },-->
+<!--            { id: 'fast-food', name: 'Đồ ăn nhanh', icon: 'fas fa-hamburger' },-->
+<!--            { id: 'cafe', name: 'Cà phê & Trà', icon: 'fas fa-coffee' },-->
+<!--            { id: 'dessert', name: 'Tráng miệng', icon: 'fas fa-ice-cream' }-->
+<!--        ];-->
+
+<!--        let cart = [];-->
+<!--        let orders = [];-->
+<!--        let authModal, cartModal, alertModal, orderDetailModal, ratingModal;-->
+<!--        let discountDetails = { code: null, percent: 0, applied: false, message: '' };-->
+<!--        let isLoggedIn = false;-->
+<!--        let hasNewNotification = false;-->
+
+<!--        // -&#45;&#45; UTILITIES -&#45;&#45;-->
+<!--        const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);-->
+<!--        const getAllMenuItems = () => {-->
+<!--            const allItems = [];-->
+<!--            restaurants.forEach(r => {-->
+<!--                if (r.menu) {-->
+<!--                    r.menu.forEach(item => {-->
+<!--                        allItems.push({ ...item, restaurantName: r.name, restaurantId: r.id, category: r.category });-->
+<!--                    });-->
+<!--                }-->
+<!--            });-->
+<!--            return allItems;-->
+<!--        };-->
+
+<!--        // -&#45;&#45; PAGE & MODAL RENDERING -&#45;&#45;-->
+<!--        const renderPage = (pageId, content) => {-->
+<!--            const pageContainer = document.getElementById(pageId);-->
+<!--            if (pageContainer) {-->
+<!--                pageContainer.innerHTML = content;-->
+<!--                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));-->
+<!--                pageContainer.classList.add('active');-->
+<!--                window.scrollTo(0, 0);-->
+<!--                bindPageEventListeners();-->
+<!--            }-->
+<!--        };-->
+
+<!--        const showModal = (modalId, content) => {-->
+<!--            const modalContainer = document.getElementById(modalId);-->
+<!--            modalContainer.innerHTML = content;-->
+<!--            const modalInstance = new bootstrap.Modal(modalContainer);-->
+
+<!--            switch(modalId) {-->
+<!--                case 'auth-modal': authModal = modalInstance; break;-->
+<!--                case 'add-to-cart-modal': cartModal = modalInstance; break;-->
+<!--                case 'alert-modal': alertModal = modalInstance; break;-->
+<!--                case 'order-detail-modal': orderDetailModal = modalInstance; break;-->
+<!--                case 'rating-modal': ratingModal = modalInstance; break;-->
+<!--            }-->
+
+<!--            modalInstance.show();-->
+<!--            bindModalEventListeners();-->
+<!--        };-->
+
+<!--        // -&#45;&#45; TEMPLATES (HTML generators) -&#45;&#45;-->
+<!--        const getHomePageTemplate = () => `-->
+
+
+
+<!--        `;-->
+
+<!--        const getDiscoverPageTemplate = (filteredRestaurants = restaurants, allItems = []) => `-->
+<!--            <div class="container py-5">-->
+<!--                <h2 class="display-5 fw-bold mb-4">Khám phá món ăn</h2>-->
+<!--                <input id="discover-search-input" type="text" placeholder="Tìm nhà hàng hoặc món ăn..." class="form-control form-control-lg mb-5">-->
+<!--                <div class="d-flex justify-content-center text-center flex-wrap gap-3 gap-md-4 mb-5">-->
+<!--                    ${categories.map((c, i) => `-->
+<!--                        <div>-->
+<!--                            <button class="category-icon d-flex align-items-center justify-content-center bg-white shadow-sm fs-2 text-muted ${i === 0 ? 'active' : ''}" data-category-id="${c.id}">-->
+<!--                                <i class="${c.icon}"></i>-->
+<!--                            </button>-->
+<!--                            <p class="mt-2 fw-semibold">${c.name}</p>-->
+<!--                        </div>-->
+<!--                    `).join('')}-->
+<!--                </div>-->
+
+<!--                <div id="restaurant-section">-->
+<!--                    <h3 id="restaurant-list-title" class="display-6 fw-bold mb-4">Nhà hàng gần bạn</h3>-->
+<!--                    <div id="restaurant-list-container" class="row g-4">-->
+<!--                        ${filteredRestaurants.length > 0 ? filteredRestaurants.map(r => `-->
+<!--                            <div class="col-md-6 col-lg-4">-->
+<!--                                <div class="card h-100 restaurant-card shadow-sm border-0" data-id="${r.id}" role="button">-->
+<!--                                    <img src="${r.image}" onerror="this.onerror=null;this.src='https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" alt="${r.name}" style="height: 200px; object-fit: cover;">-->
+<!--                                    <div class="card-body">-->
+<!--                                        <h5 class="card-title fw-bold">${r.name}</h5>-->
+<!--                                        <p class="card-text text-muted">${r.distance}</p>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        `).join('') : '<p class="text-center text-muted col-12">Không tìm thấy nhà hàng phù hợp.</p>'}-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div id="all-food-items-section" class="mt-5">-->
+<!--                    <hr class="my-5">-->
+<!--                    <h3 id="food-list-title" class="display-6 fw-bold mb-4">Tất cả món ăn</h3>-->
+<!--                    <div id="all-food-items-container" class="row g-lg-4 g-3">-->
+<!--                        ${allItems.map(item => `-->
+<!--                            <div class="col-lg-3 col-md-4 col-sm-6">-->
+<!--                                <div class="card h-100 food-card shadow-sm border-0">-->
+<!--                                    <img src="${item.image}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" style="height: 150px; object-fit: cover;">-->
+<!--                                    <div class="card-body d-flex flex-column">-->
+<!--                                        <h5 class="card-title fw-bold fs-6">${item.name}</h5>-->
+<!--                                        <p class="card-text fw-bold text-success mt-auto">${formatCurrency(item.price)}</p>-->
+<!--                                        <button class="btn btn-sm btn-outline-success fw-bold add-item-btn mt-2" data-item-id="${item.id}" data-restaurant-id="${item.restaurantId}">Thêm</button>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        `).join('')}-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+
+<!--        const getAddToCartModalTemplate = (item) => `-->
+<!--            <div class="modal-dialog modal-dialog-centered">-->
+<!--                <div class="modal-content">-->
+<!--                    <div class="modal-header border-0">-->
+<!--                        <h5 class="modal-title fw-bold fs-4">${item.name}</h5>-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                    <div class="modal-body">-->
+<!--                        <div class="d-flex align-items-center mb-3">-->
+<!--                            <label class="fw-semibold me-3">Số lượng</label>-->
+<!--                            <div class="input-group" style="width: 120px;">-->
+<!--                                <button class="btn btn-outline-secondary modal-quantity-btn" data-change="-1">-</button>-->
+<!--                                <span id="modal-quantity" class="form-control text-center fw-bold">1</span>-->
+<!--                                <button class="btn btn-outline-secondary modal-quantity-btn" data-change="1">+</button>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        <div class="mb-3">-->
+<!--                            <label class="fw-semibold">Ghi chú</label>-->
+<!--                            <textarea id="item-note" placeholder="VD: không cay" class="form-control"></textarea>-->
+<!--                        </div>-->
+<!--                        <div>-->
+<!--                            <h6 class="fw-semibold mb-2">Mua thêm</h6>-->
+<!--                            <div class="form-check"><input class="form-check-input extra-item-cb" type="checkbox" data-price="15000" data-name="Coca-Cola"><label class="form-check-label">Coca-Cola (+15.000đ)</label></div>-->
+<!--                            <div class="form-check"><input class="form-check-input extra-item-cb" type="checkbox" data-price="10000" data-name="Nước suối"><label class="form-check-label">Nước suối (+10.000đ)</label></div>-->
+<!--                            <div class="form-check"><input class="form-check-input extra-item-cb" type="checkbox" data-price="25000" data-name="Trái cây"><label class="form-check-label">Trái cây (+25.000đ)</label></div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="modal-footer border-0">-->
+<!--                        <button id="confirm-add-to-cart-btn" data-item-id="${item.id}" class="btn btn-primary w-100 btn-lg">Xác nhận</button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+
+<!--        const getCartPageTemplate = () => `-->
+<!--            <div class="container py-5">-->
+<!--                <h2 class="display-5 fw-bold mb-4">Giỏ Hàng Của Bạn</h2>-->
+<!--                <div class="row g-4">-->
+<!--                    <div class="col-lg-8">-->
+<!--                        <div id="cart-items-container" class="d-flex flex-column gap-3">-->
+<!--                        ${cart.length === 0 ? '<div class="card card-body"><p class="mb-0">Giỏ hàng của bạn đang trống.</p></div>' : cart.map((item, index) => `-->
+<!--                            <div class="card card-body">-->
+<!--                                <div class="row align-items-center">-->
+<!--                                    <div class="col-md-5 d-flex align-items-center">-->
+<!--                                        <img src="${item.image}" onerror="this.onerror=null;this.src='https://placehold.co/80x80/cccccc/ffffff?text=N/A';" class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">-->
+<!--                                        <div>-->
+<!--                                            <h5 class="fw-bold mb-1">${item.name}</h5>-->
+<!--                                            <p class="text-muted small mb-1">${item.note ? `Ghi chú: ${item.note}` : ''}</p>-->
+<!--                                            <p class="text-primary small mb-0">${item.extras.map(e => `+ ${e.name}`).join(', ')}</p>-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                    <div class="col-md-7 d-flex align-items-center justify-content-end">-->
+<!--                                        <div class="input-group me-3" style="width: 120px;">-->
+<!--                                            <button class="btn btn-outline-secondary cart-quantity-btn" data-index="${index}" data-change="-1">-</button>-->
+<!--                                            <span class="form-control text-center fw-bold">${item.quantity}</span>-->
+<!--                                            <button class="btn btn-outline-secondary cart-quantity-btn" data-index="${index}" data-change="1">+</button>-->
+<!--                                        </div>-->
+<!--                                        <span class="fw-bold me-3" style="width: 100px;">${formatCurrency(item.totalPrice)}</span>-->
+<!--                                        <button class="btn btn-outline-danger remove-cart-item-btn" data-index="${index}"><i class="fas fa-trash-alt"></i></button>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        `).join('')}-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="col-lg-4">-->
+<!--                        <div class="card card-body shadow-sm">-->
+<!--                            <h3 class="fw-bold mb-3">Tổng cộng</h3>-->
+<!--                            <div class="d-flex justify-content-between mb-2"><span>Tạm tính</span><span id="cart-subtotal"></span></div>-->
+<!--                            <div class="d-flex justify-content-between mb-2"><span>Phí vận chuyển</span><span id="cart-shipping"></span></div>-->
+<!--                            <div id="discount-row" class="d-flex justify-content-between mb-2 text-danger d-none">-->
+<!--                                <span class="fw-semibold">Giảm giá</span>-->
+<!--                                <span id="cart-discount"></span>-->
+<!--                            </div>-->
+<!--                            <hr>-->
+<!--                            <div class="input-group mb-3">-->
+<!--                                <input type="text" id="coupon-input" class="form-control" placeholder="Mã giảm giá">-->
+<!--                                <button class="btn btn-outline-secondary" type="button" id="apply-coupon-btn">Áp dụng</button>-->
+<!--                            </div>-->
+<!--                            <div id="coupon-message" class="small mb-3"></div>-->
+<!--                            <hr>-->
+<!--                            <div class="d-flex justify-content-between fw-bold fs-5 mb-4"><span>Tổng cộng</span><span id="cart-total-price"></span></div>-->
+<!--                            <div class="d-grid"><button id="checkout-button" class="btn btn-primary btn-lg">Tiến hành thanh toán</button></div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+
+
+
+<!--        const getProfileSecurityTemplate = () => `-->
+<!--            <h3 class="fw-bold mb-4">Đổi mật khẩu</h3>-->
+<!--            <form class="row g-3" style="max-width: 500px;">-->
+<!--                <div class="col-12"><label class="form-label">Mật khẩu mới</label><input type="password" class="form-control"></div>-->
+<!--                <div class="col-12"><label class="form-label">Xác nhận mật khẩu mới</label><input type="password" class="form-control"></div>-->
+<!--                <div class="col-12 mt-4"><button type="submit" class="btn btn-primary">Đổi mật khẩu</button></div>-->
+<!--            </form>-->
+<!--        `;-->
+
+<!--        const getMyOrdersTemplate = () => `-->
+<!--            <h3 class="fw-bold mb-4">Đơn hàng của tôi</h3>-->
+<!--            <div class="d-flex flex-column gap-3">-->
+<!--            ${orders.length === 0 ? '<p>Bạn chưa có đơn hàng nào.</p>' : orders.sort((a, b) => b.id - a.id).map(order => `-->
+<!--                <div class="card card-body order-card" role="button" data-order-id="${order.id}">-->
+<!--                    <div class="d-flex justify-content-between align-items-center">-->
+<!--                        <div>-->
+<!--                            <h5 class="fw-bold">Đơn hàng #${order.id}</h5>-->
+<!--                            <p class="text-muted small mb-0">Ngày đặt: ${order.date}</p>-->
+<!--                        </div>-->
+<!--                        <div class="text-end">-->
+<!--                            <p class="fw-bold fs-5 mb-1">${formatCurrency(order.total)}</p>-->
+<!--                            <span class="order-status ${order.status}">${order.statusText}</span>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            `).join('')}-->
+<!--            </div>-->
+<!--        `;-->
+<!--        const getOrderDetailModalTemplate = (order) => {-->
+<!--            const getStatusClass = (stepStatus) => {-->
+<!--                 const statusHierarchy = ['pending', 'preparing', 'delivering', 'delivered'];-->
+<!--                 const currentStatusIndex = statusHierarchy.indexOf(order.status);-->
+<!--                 const stepStatusIndex = statusHierarchy.indexOf(stepStatus);-->
+<!--                 return currentStatusIndex >= stepStatusIndex ? 'active' : '';-->
+<!--            }-->
+
+<!--            return `-->
+<!--            <div class="modal-dialog modal-lg modal-dialog-centered">-->
+<!--                <div class="modal-content">-->
+<!--                    <div class="modal-header">-->
+<!--                        <h5 class="modal-title fw-bold">Chi tiết đơn hàng #${order.id}</h5>-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                    <div class="modal-body">-->
+<!--                        <ul class="timeline">-->
+<!--                            <li class="timeline-item ${getStatusClass('pending')}">-->
+<!--                                <div class="timeline-icon"><i class="fas fa-receipt"></i></div>-->
+<!--                                <div class="timeline-body"><strong>Đang chờ xác nhận</strong><p class="small text-muted">Đơn hàng của bạn đã được đặt thành công.</p></div>-->
+<!--                            </li>-->
+<!--                            <li class="timeline-item ${getStatusClass('preparing')}">-->
+<!--                                <div class="timeline-icon"><i class="fas fa-utensils"></i></div>-->
+<!--                                <div class="timeline-body"><strong>Nhà hàng đang chuẩn bị</strong><p class="small text-muted">Các đầu bếp tài hoa đang chuẩn bị món ăn cho bạn.</p></div>-->
+<!--                            </li>-->
+<!--                            <li class="timeline-item ${getStatusClass('delivering')}">-->
+<!--                                <div class="timeline-icon"><i class="fas fa-truck"></i></div>-->
+<!--                                <div class="timeline-body"><strong>Đang giao hàng</strong><p class="small text-muted">Tài xế đang trên đường giao món ngon đến bạn.</p></div>-->
+<!--                            </li>-->
+<!--                            <li class="timeline-item ${getStatusClass('delivered')}">-->
+<!--                                <div class="timeline-icon"><i class="fas fa-check-circle"></i></div>-->
+<!--                                <div class="timeline-body"><strong>Giao hàng thành công</strong><p class="small text-muted">Cảm ơn bạn đã tin dùng FoodNow!</p></div>-->
+<!--                            </li>-->
+<!--                        </ul>-->
+<!--                        ${order.status === 'delivered' && !order.rated ? `<div class="text-center mt-4"><button class="btn btn-warning rating-btn" data-order-id="${order.id}">Đánh giá đơn hàng</button></div>` : ''}-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+<!--        }-->
+<!--        const getRatingModalTemplate = (orderId) => `-->
+<!--            <div class="modal-dialog modal-dialog-centered">-->
+<!--                <div class="modal-content">-->
+<!--                    <div class="modal-header">-->
+<!--                        <h5 class="modal-title fw-bold">Đánh giá đơn hàng #${orderId}</h5>-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                    <div class="modal-body">-->
+<!--                        <p>Bạn cảm thấy thế nào về đơn hàng này?</p>-->
+<!--                        <div class="text-center fs-2 rating-stars">-->
+<!--                            <i class="far fa-star" data-value="1"></i>-->
+<!--                            <i class="far fa-star" data-value="2"></i>-->
+<!--                            <i class="far fa-star" data-value="3"></i>-->
+<!--                            <i class="far fa-star" data-value="4"></i>-->
+<!--                            <i class="far fa-star" data-value="5"></i>-->
+<!--                        </div>-->
+<!--                        <textarea class="form-control mt-3" rows="3" placeholder="Chia sẻ cảm nhận của bạn..."></textarea>-->
+<!--                    </div>-->
+<!--                    <div class="modal-footer">-->
+<!--                        <button type="button" id="submit-rating-btn" data-order-id="${orderId}" class="btn btn-primary w-100">Gửi đánh giá</button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+
+<!--        const getRegisterModalTemplate = () => `-->
+<!--            <div class="modal-dialog modal-dialog-centered">-->
+<!--                <div class="modal-content">-->
+<!--                    <div class="modal-header">-->
+<!--                        <h5 class="modal-title fw-bold">Đăng Ký Tài Khoản</h5>-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                    <div class="modal-body">-->
+<!--                        <form id="register-form" class="row g-3">-->
+<!--                            <div class="col-md-6"><label class="form-label">Họ và tên</label><input type="text" class="form-control" value="le hong duc" required></div>-->
+<!--                            <div class="col-md-6"><label class="form-label">Ngày sinh</label><input type="date" class="form-control" value="2025-07-09" required></div>-->
+<!--                            <div class="col-12"><label class="form-label">Số điện thoại</label><input type="tel" class="form-control" value="0399646729" required></div>-->
+<!--                            <div class="col-12"><label class="form-label">Email</label><input type="email" class="form-control" value="lehongduc201204@gmail.com" required></div>-->
+<!--                            <div class="col-12"><label class="form-label">Mật khẩu</label><input type="password" class="form-control" required></div>-->
+<!--                            <div class="col-12"><label class="form-label">Xác nhận mật khẩu</label><input type="password" class="form-control" required></div>-->
+<!--                        </form>-->
+<!--                    </div>-->
+<!--                    <div class="modal-footer">-->
+<!--                        <button type="submit" form="register-form" class="btn btn-primary w-100">Đăng Ký</button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+<!--        const getLoginModalTemplate = () => `-->
+<!--            <div class="modal-dialog modal-dialog-centered">-->
+<!--                <div class="modal-content">-->
+<!--                    <div class="modal-header">-->
+<!--                        <h5 class="modal-title fw-bold">Đăng Nhập</h5>-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                    <div class="modal-body">-->
+<!--                        <form id="login-form" class="row g-3">-->
+<!--                            <div class="col-12"><label class="form-label">Email</label><input type="email" class="form-control" required></div>-->
+<!--                            <div class="col-12"><label class="form-label">Mật khẩu</label><input type="password" class="form-control" required></div>-->
+<!--                        </form>-->
+<!--                    </div>-->
+<!--                    <div class="modal-footer">-->
+<!--                        <button type="submit" form="login-form" class="btn btn-primary w-100">Đăng Nhập</button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+<!--        const getAboutPageTemplate = () => `-->
+<!--            <div class="container py-5">-->
+<!--                <div class="text-center mb-5">-->
+<!--                    <h1 class="display-4 fw-bold">Về FoodNow</h1>-->
+<!--                    <p class="lead text-muted">Mang hương vị thế giới đến tận cửa nhà bạn.</p>-->
+<!--                </div>-->
+<!--                <div class="row g-5 align-items-center">-->
+<!--                    <div class="col-lg-6">-->
+<!--                        <h2 class="fw-bold">Sứ mệnh của chúng tôi</h2>-->
+<!--                        <p>Tại FoodNow, sứ mệnh của chúng tôi là kết nối những người yêu ẩm thực với những món ăn ngon nhất một cách nhanh chóng và tiện lợi. Chúng tôi tin rằng một bữa ăn ngon có thể mang lại niềm vui và gắn kết mọi người. Vì vậy, chúng tôi nỗ lực không ngừng để đơn giản hóa quy trình đặt hàng, đảm bảo chất lượng và mang đến trải nghiệm tuyệt vời cho khách hàng.</p>-->
+<!--                    </div>-->
+<!--                    <div class="col-lg-6">-->
+<!--                        <img src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=1287&auto=format&fit=crop" class="img-fluid rounded shadow">-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+<!--        const getAlertModalTemplate = (title, message) => `-->
+<!--            <div class="modal-dialog modal-dialog-centered">-->
+<!--                <div class="modal-content">-->
+<!--                    <div class="modal-header">-->
+<!--                        <h5 class="modal-title fw-bold">${title}</h5>-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                    <div class="modal-body">-->
+<!--                        <p>${message}</p>-->
+<!--                    </div>-->
+<!--                    <div class="modal-footer">-->
+<!--                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        `;-->
+
+<!--        // -&#45;&#45; UI UPDATE LOGIC -&#45;&#45;-->
+<!--        const updateCartPage = () => {-->
+<!--            renderPage('cart-page', getCartPageTemplate());-->
+<!--            const subtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);-->
+<!--            const shipping = cart.length > 0 ? 15000 : 0;-->
+<!--            let discountAmount = 0;-->
+
+<!--            if (discountDetails.applied) {-->
+<!--                discountAmount = subtotal * discountDetails.percent;-->
+<!--            }-->
+
+<!--            const finalTotal = subtotal - discountAmount + shipping;-->
+
+<!--            document.getElementById('cart-subtotal').textContent = formatCurrency(subtotal);-->
+<!--            document.getElementById('cart-shipping').textContent = formatCurrency(shipping);-->
+<!--            document.getElementById('cart-total-price').textContent = formatCurrency(finalTotal);-->
+
+<!--            const discountRow = document.getElementById('discount-row');-->
+<!--            const cartDiscount = document.getElementById('cart-discount');-->
+<!--            if (discountDetails.applied) {-->
+<!--                discountRow.classList.remove('d-none');-->
+<!--                cartDiscount.textContent = `- ${formatCurrency(discountAmount)}`;-->
+<!--            }-->
+
+<!--            const couponMessage = document.getElementById('coupon-message');-->
+<!--            if (discountDetails.message) {-->
+<!--                couponMessage.textContent = discountDetails.message;-->
+<!--                couponMessage.className = `small mb-3 ${discountDetails.applied ? 'text-success' : 'text-danger'}`;-->
+<!--            }-->
+
+<!--            const couponInput = document.getElementById('coupon-input');-->
+<!--            if (couponInput && discountDetails.code) {-->
+<!--                couponInput.value = discountDetails.code;-->
+<!--            }-->
+
+<!--            const checkoutBtn = document.getElementById('checkout-button');-->
+<!--            if(checkoutBtn) {-->
+<!--                 checkoutBtn.disabled = cart.length === 0;-->
+<!--            }-->
+<!--        };-->
+
+<!--        const updateCartBadge = () => {-->
+<!--            document.getElementById('cart-count-badge').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);-->
+<!--        }-->
+
+<!--        const updateNotificationBadge = () => {-->
+<!--            const badge = document.getElementById('notification-badge');-->
+<!--            if (badge) {-->
+<!--                badge.classList.toggle('d-none', !hasNewNotification);-->
+<!--            }-->
+<!--        }-->
+
+<!--        // -&#45;&#45; EVENT HANDLING -&#45;&#45;-->
+<!--        const handlePageNavigation = (pageId, subTabId = null) => {-->
+<!--            switch (pageId) {-->
+<!--                case 'home':-->
+<!--                    renderPage('home-page', getHomePageTemplate());-->
+<!--                    break;-->
+<!--                case 'discover':-->
+<!--                    renderPage('discover-page', getDiscoverPageTemplate(restaurants, getAllMenuItems()));-->
+<!--                    if (subTabId) { // Re-using subTabId as searchString here-->
+<!--                        const searchInput = document.getElementById('discover-search-input');-->
+<!--                        searchInput.value = subTabId;-->
+<!--                        searchInput.dispatchEvent(new Event('keyup'));-->
+<!--                    }-->
+<!--                    break;-->
+<!--                case 'about':-->
+<!--                    renderPage('about-page', getAboutPageTemplate());-->
+<!--                    break;-->
+<!--                case 'cart':-->
+<!--                    updateCartPage();-->
+<!--                    break;-->
+<!--                case 'profile':-->
+<!--                    renderPage('profile-page', getProfilePageTemplate());-->
+<!--                    // After rendering the main profile page, switch to the specified or default tab-->
+<!--                    switchProfileTab(subTabId || 'info');-->
+<!--                    break;-->
+<!--            }-->
+<!--        };-->
+
+<!--        const switchProfileTab = (tabId) => {-->
+<!--            document.querySelectorAll('.profile-tab-btn').forEach(btn => btn.classList.remove('active'));-->
+<!--            const tabButton = document.querySelector(`.profile-tab-btn[data-tab="${tabId}"]`);-->
+<!--            if (tabButton) {-->
+<!--                tabButton.classList.add('active');-->
+<!--                const contentContainer = document.getElementById('profile-content');-->
+<!--                if (contentContainer) {-->
+<!--                    if (tabId === 'info') contentContainer.innerHTML = getProfileInfoTemplate();-->
+<!--                    else if (tabId === 'security') contentContainer.innerHTML = getProfileSecurityTemplate();-->
+<!--                    else if (tabId === 'orders') contentContainer.innerHTML = getMyOrdersTemplate();-->
+<!--                    bindPageEventListeners(); // Re-bind for any new elements in the tab content-->
+<!--                }-->
+<!--            }-->
+<!--        };-->
+
+<!--        const handleConfirmAddToCart = (e) => {-->
+<!--            if (!isLoggedIn) {-->
+<!--                if(cartModal) cartModal.hide();-->
+<!--                showModal('auth-modal', getLoginModalTemplate());-->
+<!--                return;-->
+<!--            }-->
+<!--            const itemId = parseInt(e.currentTarget.dataset.itemId);-->
+<!--            const item = restaurants.flatMap(r => r.menu || []).find(m => m.id === itemId);-->
+<!--            const quantity = parseInt(document.getElementById('modal-quantity').textContent);-->
+<!--            const note = document.getElementById('item-note').value;-->
+<!--            const extras = [];-->
+<!--            let extrasPrice = 0;-->
+<!--            document.querySelectorAll('.extra-item-cb:checked').forEach(cb => {-->
+<!--                extras.push({ name: cb.dataset.name, price: parseInt(cb.dataset.price) });-->
+<!--                extrasPrice += parseInt(cb.dataset.price);-->
+<!--            });-->
+
+<!--            const cartItem = { ...item, quantity, note, extras, totalPrice: (item.price + extrasPrice) * quantity };-->
+<!--            cart.push(cartItem);-->
+<!--            updateCartBadge();-->
+<!--            if(cartModal) cartModal.hide();-->
+<!--        };-->
+
+<!--        const handleCartQuantityChange = (e) => {-->
+<!--            const index = parseInt(e.currentTarget.dataset.index);-->
+<!--            const change = parseInt(e.currentTarget.dataset.change);-->
+<!--            cart[index].quantity += change;-->
+<!--            if (cart[index].quantity <= 0) {-->
+<!--                cart.splice(index, 1);-->
+<!--            } else {-->
+<!--                const basePrice = cart[index].price + cart[index].extras.reduce((sum, extra) => sum + extra.price, 0);-->
+<!--                cart[index].totalPrice = basePrice * cart[index].quantity;-->
+<!--            }-->
+<!--            if (cart.length === 0) {-->
+<!--                discountDetails = { code: null, percent: 0, applied: false, message: '' };-->
+<!--            }-->
+<!--            updateCartPage();-->
+<!--            updateCartBadge();-->
+<!--        };-->
+
+<!--        const handleRemoveFromCart = (e) => {-->
+<!--            const index = parseInt(e.currentTarget.dataset.index);-->
+<!--            cart.splice(index, 1);-->
+<!--                if (cart.length === 0) {-->
+<!--                discountDetails = { code: null, percent: 0, applied: false, message: '' };-->
+<!--            }-->
+<!--            updateCartPage();-->
+<!--            updateCartBadge();-->
+<!--        };-->
+
+<!--        const handleApplyCoupon = () => {-->
+<!--            const couponInput = document.getElementById('coupon-input');-->
+<!--            const code = couponInput.value.trim();-->
+
+<!--            if (code.toLowerCase() === 'datfoodnow') {-->
+<!--                discountDetails = { code: 'DatFoodNow', percent: 0.15, applied: true, message: 'Mã giảm giá đã được áp dụng!' };-->
+<!--            } else {-->
+<!--                discountDetails = { code: code, percent: 0, applied: false, message: 'Mã giảm giá không hợp lệ.' };-->
+<!--            }-->
+<!--            updateCartPage();-->
+<!--        };-->
+
+<!--        const handleAuth = (loggedIn) => {-->
+<!--            isLoggedIn = loggedIn;-->
+<!--            document.getElementById('logged-out-view').classList.toggle('d-none', isLoggedIn);-->
+<!--            document.getElementById('logged-in-view').classList.toggle('d-none', !isLoggedIn);-->
+<!--        };-->
+
+<!--        const handleFilterChange = () => {-->
+<!--            const searchTerm = document.getElementById('discover-search-input').value.toLowerCase();-->
+<!--            const activeCategoryBtn = document.querySelector('.category-icon.active');-->
+<!--            const activeCategoryId = activeCategoryBtn.dataset.categoryId;-->
+<!--            const activeCategory = categories.find(c => c.id === activeCategoryId);-->
+
+<!--            const restaurantSection = document.getElementById('restaurant-section');-->
+<!--            const allFoodSection = document.getElementById('all-food-items-section');-->
+<!--            const foodListTitle = document.getElementById('food-list-title');-->
+<!--            const allFoodContainer = document.getElementById('all-food-items-container');-->
+
+<!--            if (activeCategoryId === 'all') {-->
+<!--                restaurantSection.style.display = 'block';-->
+<!--                allFoodSection.style.display = 'block';-->
+<!--                foodListTitle.textContent = 'Tất cả món ăn';-->
+
+<!--                let filteredRestaurants = restaurants.filter(r => r.name.toLowerCase().includes(searchTerm));-->
+<!--                document.getElementById('restaurant-list-container').innerHTML = filteredRestaurants.length > 0 ? filteredRestaurants.map(r => `-->
+<!--                    <div class="col-md-6 col-lg-4">-->
+<!--                        <div class="card h-100 restaurant-card shadow-sm border-0" data-id="${r.id}" role="button">-->
+<!--                            <img src="${r.image}" onerror="this.onerror=null;this.src='https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" alt="${r.name}" style="height: 200px; object-fit: cover;">-->
+<!--                            <div class="card-body">-->
+<!--                                <h5 class="card-title fw-bold">${r.name}</h5>-->
+<!--                                <p class="card-text text-muted">${r.distance}</p>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                `).join('') : '<p class="text-center text-muted col-12">Không tìm thấy nhà hàng phù hợp.</p>';-->
+
+<!--                let allItems = getAllMenuItems().filter(item => item.name.toLowerCase().includes(searchTerm));-->
+<!--                allFoodContainer.innerHTML = allItems.length > 0 ? allItems.map(item => `-->
+<!--                   <div class="col-lg-3 col-md-4 col-sm-6">-->
+<!--                        <div class="card h-100 food-card shadow-sm border-0">-->
+<!--                            <img src="${item.image}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" style="height: 150px; object-fit: cover;">-->
+<!--                            <div class="card-body d-flex flex-column">-->
+<!--                                <h5 class="card-title fw-bold fs-6">${item.name}</h5>-->
+<!--                                <p class="card-text fw-bold text-success mt-auto">${formatCurrency(item.price)}</p>-->
+<!--                                <button class="btn btn-sm btn-outline-success fw-bold add-item-btn mt-2" data-item-id="${item.id}" data-restaurant-id="${item.restaurantId}">Thêm</button>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                `).join('') : '<p class="text-center text-muted col-12">Không tìm thấy món ăn phù hợp.</p>';-->
+
+<!--            } else {-->
+<!--                restaurantSection.style.display = 'none';-->
+<!--                allFoodSection.style.display = 'block';-->
+<!--                foodListTitle.textContent = `Món ${activeCategory.name}`;-->
+
+<!--                let filteredItems = getAllMenuItems().filter(item => item.category === activeCategoryId);-->
+<!--                 if (searchTerm) {-->
+<!--                    filteredItems = filteredItems.filter(item => item.name.toLowerCase().includes(searchTerm));-->
+<!--                }-->
+
+<!--                allFoodContainer.innerHTML = filteredItems.length > 0 ? filteredItems.map(item => `-->
+<!--                   <div class="col-lg-3 col-md-4 col-sm-6">-->
+<!--                        <div class="card h-100 food-card shadow-sm border-0">-->
+<!--                            <img src="${item.image}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Image+Not+Found';" class="card-img-top" style="height: 150px; object-fit: cover;">-->
+<!--                            <div class="card-body d-flex flex-column">-->
+<!--                                <h5 class="card-title fw-bold fs-6">${item.name}</h5>-->
+<!--                                <p class="card-text fw-bold text-success mt-auto">${formatCurrency(item.price)}</p>-->
+<!--                                <button class="btn btn-sm btn-outline-success fw-bold add-item-btn mt-2" data-item-id="${item.id}" data-restaurant-id="${item.restaurantId}">Thêm</button>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                `).join('') : '<p class="text-center text-muted col-12">Không tìm thấy món ăn phù hợp.</p>';-->
+<!--            }-->
+
+<!--            bindPageEventListeners();-->
+<!--        };-->
+
+
+<!--        // -&#45;&#45; BINDERS -&#45;&#45;-->
+<!--        const bindPageEventListeners = () => {-->
+<!--            // Home page search button-->
+<!--            const homeSearchBtn = document.getElementById('home-search-btn');-->
+<!--            if (homeSearchBtn) {-->
+<!--                homeSearchBtn.addEventListener('click', () => {-->
+<!--                    const searchTerm = document.getElementById('home-search-input').value;-->
+<!--                    handlePageNavigation('discover', searchTerm);-->
+<!--                });-->
+<!--            }-->
+
+<!--            document.querySelectorAll('.restaurant-card').forEach(c => c.addEventListener('click', (e) => {-->
+<!--                const restaurant = restaurants.find(r => r.id === parseInt(e.currentTarget.dataset.id));-->
+<!--                if (restaurant) renderPage('restaurant-detail-page', getRestaurantDetailPageTemplate(restaurant));-->
+<!--            }));-->
+<!--            document.querySelectorAll('.add-item-btn').forEach(b => b.addEventListener('click', (e) => {-->
+<!--                if (!isLoggedIn) {-->
+<!--                    showModal('auth-modal', getLoginModalTemplate());-->
+<!--                    return;-->
+<!--                }-->
+<!--                const itemId = parseInt(e.currentTarget.dataset.itemId);-->
+<!--                const item = restaurants.flatMap(r => r.menu || []).find(m => m.id === itemId);-->
+<!--                if (item) showModal('add-to-cart-modal', getAddToCartModalTemplate(item));-->
+<!--            }));-->
+<!--            document.querySelectorAll('.cart-quantity-btn').forEach(b => b.addEventListener('click', handleCartQuantityChange));-->
+<!--            document.querySelectorAll('.remove-cart-item-btn').forEach(b => b.addEventListener('click', handleRemoveFromCart));-->
+<!--            document.querySelectorAll('.profile-tab-btn').forEach(b => b.addEventListener('click', (e) => {-->
+<!--                const tab = e.currentTarget.dataset.tab;-->
+<!--                switchProfileTab(tab);-->
+<!--            }));-->
+<!--            document.querySelectorAll('.order-card').forEach(card => card.addEventListener('click', (e) => {-->
+<!--                const orderId = parseInt(e.currentTarget.dataset.orderId);-->
+<!--                const order = orders.find(o => o.id === orderId);-->
+<!--                if(order) showModal('order-detail-modal', getOrderDetailModalTemplate(order));-->
+<!--            }));-->
+<!--            const discoverSearchInput = document.getElementById('discover-search-input');-->
+<!--            if(discoverSearchInput) {-->
+<!--                discoverSearchInput.addEventListener('keyup', handleFilterChange);-->
+<!--            }-->
+<!--            const applyCouponBtn = document.getElementById('apply-coupon-btn');-->
+<!--            if (applyCouponBtn) {-->
+<!--                applyCouponBtn.addEventListener('click', handleApplyCoupon);-->
+<!--            }-->
+<!--            const checkoutBtn = document.getElementById('checkout-button');-->
+<!--            if(checkoutBtn) {-->
+<!--                checkoutBtn.addEventListener('click', () => {-->
+<!--                    if (!isLoggedIn) {-->
+<!--                        showModal('auth-modal', getLoginModalTemplate());-->
+<!--                        return;-->
+<!--                    }-->
+<!--                    if (cart.length > 0) {-->
+<!--                        const subtotal = cart.reduce((sum, item) => sum + item.totalPrice, 0);-->
+<!--                        const shipping = 15000;-->
+<!--                        let discountAmount = 0;-->
+<!--                        if (discountDetails.applied) {-->
+<!--                            discountAmount = subtotal * discountDetails.percent;-->
+<!--                        }-->
+<!--                        const finalTotal = subtotal - discountAmount + shipping;-->
+
+<!--                        const newOrder = {-->
+<!--                            id: Math.floor(100000 + Math.random() * 900000),-->
+<!--                            date: new Date().toLocaleDateString('vi-VN'),-->
+<!--                            total: finalTotal,-->
+<!--                            status: 'pending',-->
+<!--                            statusText: 'Đang chờ xác nhận',-->
+<!--                            rated: false-->
+<!--                        };-->
+<!--                        orders.push(newOrder);-->
+
+<!--                        hasNewNotification = true;-->
+<!--                        updateNotificationBadge();-->
+
+<!--                        // Simulate order status progression-->
+<!--                        setTimeout(() => {-->
+<!--                            const order = orders.find(o => o.id === newOrder.id);-->
+<!--                            if(order) {-->
+<!--                                order.status = 'preparing';-->
+<!--                                order.statusText = 'Đang chuẩn bị';-->
+<!--                            }-->
+<!--                        }, 5000);-->
+
+<!--                        setTimeout(() => {-->
+<!--                            const order = orders.find(o => o.id === newOrder.id);-->
+<!--                            if(order) {-->
+<!--                                order.status = 'delivering';-->
+<!--                                order.statusText = 'Đang giao hàng';-->
+<!--                            }-->
+<!--                        }, 10000);-->
+
+<!--                        setTimeout(() => {-->
+<!--                            const order = orders.find(o => o.id === newOrder.id);-->
+<!--                            if(order) {-->
+<!--                                order.status = 'delivered';-->
+<!--                                order.statusText = 'Đã giao hàng';-->
+<!--                            }-->
+<!--                        }, 15000);-->
+
+
+<!--                        showModal('alert-modal', getAlertModalTemplate('Đặt hàng thành công!', 'Cảm ơn bạn đã đặt hàng. Bạn có thể theo dõi đơn hàng trong hồ sơ.'));-->
+<!--                        cart = [];-->
+<!--                        discountDetails = { code: null, percent: 0, applied: false, message: '' };-->
+<!--                        updateCartBadge();-->
+<!--                        updateCartPage();-->
+<!--                    } else {-->
+<!--                        showModal('alert-modal', getAlertModalTemplate('Giỏ hàng trống!', 'Vui lòng thêm sản phẩm vào giỏ hàng trước khi thanh toán.'));-->
+<!--                    }-->
+<!--                });-->
+<!--            }-->
+<!--            document.querySelectorAll('.category-icon').forEach(btn => btn.addEventListener('click', (e) => {-->
+<!--                document.querySelectorAll('.category-icon').forEach(b => b.classList.remove('active'));-->
+<!--                e.currentTarget.classList.add('active');-->
+<!--                handleFilterChange();-->
+<!--            }));-->
+<!--            const contactForm = document.getElementById('contact-form');-->
+<!--            if(contactForm) {-->
+<!--                contactForm.addEventListener('submit', (e) => {-->
+<!--                    e.preventDefault();-->
+<!--                    showModal('alert-modal', getAlertModalTemplate('Cảm ơn bạn!', 'Tin nhắn của bạn đã được gửi. Chúng tôi sẽ sớm liên hệ lại.'));-->
+<!--                    contactForm.reset();-->
+<!--                });-->
+<!--            }-->
+<!--        };-->
+
+<!--        const bindModalEventListeners = () => {-->
+<!--            document.querySelectorAll('.modal-quantity-btn').forEach(b => b.addEventListener('click', (e) => {-->
+<!--                const qtyEl = document.getElementById('modal-quantity');-->
+<!--                if(qtyEl) {-->
+<!--                    let qty = parseInt(qtyEl.textContent) + parseInt(e.currentTarget.dataset.change);-->
+<!--                    if (qty < 1) qty = 1;-->
+<!--                    qtyEl.textContent = qty;-->
+<!--                }-->
+<!--            }));-->
+<!--            const confirmBtn = document.getElementById('confirm-add-to-cart-btn');-->
+<!--            if (confirmBtn) confirmBtn.addEventListener('click', handleConfirmAddToCart);-->
+
+<!--            const registerForm = document.getElementById('register-form');-->
+<!--            if(registerForm) {-->
+<!--                registerForm.addEventListener('submit', (e) => {-->
+<!--                    e.preventDefault();-->
+<!--                    handleAuth(true);-->
+<!--                    if(authModal) authModal.hide();-->
+<!--                });-->
+<!--            }-->
+<!--            const loginForm = document.getElementById('login-form');-->
+<!--            if(loginForm) {-->
+<!--                loginForm.addEventListener('submit', (e) => {-->
+<!--                    e.preventDefault();-->
+<!--                    handleAuth(true);-->
+<!--                    if(authModal) authModal.hide();-->
+<!--                });-->
+<!--            }-->
+<!--            document.querySelectorAll('.rating-btn').forEach(btn => btn.addEventListener('click', (e) => {-->
+<!--                const orderId = e.currentTarget.dataset.orderId;-->
+<!--                if(orderDetailModal) orderDetailModal.hide();-->
+<!--                showModal('rating-modal', getRatingModalTemplate(orderId));-->
+<!--            }));-->
+
+<!--            const ratingStars = document.querySelectorAll('.rating-stars i');-->
+<!--            ratingStars.forEach(star => {-->
+<!--                star.addEventListener('mouseover', (e) => {-->
+<!--                    const currentValue = e.currentTarget.dataset.value;-->
+<!--                    ratingStars.forEach(s => {-->
+<!--                        s.classList.toggle('fas', s.dataset.value <= currentValue);-->
+<!--                        s.classList.toggle('far', s.dataset.value > currentValue);-->
+<!--                    });-->
+<!--                });-->
+<!--                star.addEventListener('click', (e) => {-->
+<!--                    const ratingValue = e.currentTarget.dataset.value;-->
+<!--                    ratingStars.forEach(s => {-->
+<!--                        s.dataset.selected = (s.dataset.value <= ratingValue);-->
+<!--                    });-->
+<!--                });-->
+<!--                star.addEventListener('mouseout', () => {-->
+<!--                     ratingStars.forEach(s => {-->
+<!--                        s.classList.toggle('fas', s.dataset.selected === 'true');-->
+<!--                        s.classList.toggle('far', s.dataset.selected !== 'true');-->
+<!--                    });-->
+<!--                })-->
+<!--            });-->
+
+<!--            const submitRatingBtn = document.getElementById('submit-rating-btn');-->
+<!--            if(submitRatingBtn) {-->
+<!--                submitRatingBtn.addEventListener('click', (e) => {-->
+<!--                    const orderId = parseInt(e.currentTarget.dataset.orderId);-->
+<!--                    const order = orders.find(o => o.id === orderId);-->
+<!--                    if(order) order.rated = true;-->
+<!--                    if(ratingModal) ratingModal.hide();-->
+<!--                    showModal('alert-modal', getAlertModalTemplate('Cảm ơn bạn!', 'Đánh giá của bạn đã được ghi nhận.'));-->
+<!--                });-->
+<!--            }-->
+<!--        };-->
+
+<!--        const bindGlobalEventListeners = () => {-->
+<!--            document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', (e) => {-->
+<!--                e.preventDefault();-->
+<!--                if (e.currentTarget.dataset.scroll) {-->
+<!--                    const targetId = e.currentTarget.getAttribute('href');-->
+<!--                    if (!document.getElementById('home-page').classList.contains('active')) {-->
+<!--                        handlePageNavigation('home');-->
+<!--                        setTimeout(() => {-->
+<!--                            const element = document.querySelector(targetId);-->
+<!--                            if (element) {-->
+<!--                                element.scrollIntoView({ behavior: 'smooth' });-->
+<!--                            }-->
+<!--                        }, 100);-->
+<!--                    } else {-->
+<!--                         const element = document.querySelector(targetId);-->
+<!--                         if (element) {-->
+<!--                            element.scrollIntoView({ behavior: 'smooth' });-->
+<!--                         }-->
+<!--                    }-->
+<!--                } else {-->
+<!--                    handlePageNavigation(e.currentTarget.dataset.page);-->
+<!--                }-->
+<!--            }));-->
+<!--            document.getElementById('register-btn')?.addEventListener('click', () => showModal('auth-modal', getRegisterModalTemplate()));-->
+<!--            document.getElementById('login-btn')?.addEventListener('click', () => showModal('auth-modal', getLoginModalTemplate()));-->
+<!--            document.getElementById('logout-btn')?.addEventListener('click', (e) => {-->
+<!--                e.preventDefault();-->
+<!--                handleAuth(false);-->
+<!--            });-->
+<!--            document.getElementById('notification-icon')?.addEventListener('click', (e) => {-->
+<!--                e.preventDefault();-->
+<!--                if(isLoggedIn) {-->
+<!--                    hasNewNotification = false;-->
+<!--                    updateNotificationBadge();-->
+<!--                    handlePageNavigation('profile', 'orders');-->
+<!--                } else {-->
+<!--                    showModal('auth-modal', getLoginModalTemplate());-->
+<!--                }-->
+<!--            });-->
+<!--        }-->
+
+<!--        // -&#45;&#45; INITIALIZATION -&#45;&#45;-->
+<!--        bindGlobalEventListeners();-->
+<!--        handlePageNavigation('home');-->
+
+<!--    });-->
+
+
+<!--</script>-->
+</body>
+</html>
+
+{% endblock %}

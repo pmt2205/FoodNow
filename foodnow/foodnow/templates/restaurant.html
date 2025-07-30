@@ -1,0 +1,28 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+  <!-- Nội dung chính -->
+<section class="container py-5">
+    <h2 class="display-6 fw-bold text-center mb-5">Tất cả nhà hàng</h2>
+    <div class="row g-4">
+        {% for res in restaurants %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{{ url_for('view_menu', rid=res.id) }}" class="text-decoration-none text-dark">
+                <div class="card h-100 restaurant-card shadow-sm border-0" role="button">
+                    <img src="{{ res.image }}"
+                         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop';"
+                         class="card-img-top" alt="{{ res.name }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">{{ res.name }}</h5>
+                        <p class="card-text text-muted">{{ res.description or 'Không có mô tả' }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+
+{% endblock %}
+
+

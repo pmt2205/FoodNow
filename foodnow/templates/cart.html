@@ -40,8 +40,8 @@
                                    class="btn btn-outline-secondary">+</a>
                             </div>
                             <span class="fw-bold me-3" style="width: 100px;">
-                                        {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity) }}
-                                    </span>
+                                {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity) }}
+                            </span>
                             <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}"
                                class="btn btn-outline-danger"><i class="fas fa-trash-alt"></i></a>
                         </div>
@@ -55,7 +55,7 @@
         <div class="col-lg-4">
             <div class="card card-body shadow-sm">
                 <h3 class="fw-bold mb-3">Tổng cộng</h3>
-                <form id="checkout-form" action="{{ url_for('checkout') }}" method="POST">
+                <form id="checkout-form" method="POST" action="{{ url_for('checkout') }}">
                     <div class="mb-3">
                         <label class="form-label">Địa chỉ nhận hàng</label>
                         <input type="text" name="address" class="form-control" required
@@ -77,18 +77,36 @@
                         <span>{{ '{:,.0f} đ'.format(total_price) }}</span>
                     </div>
 
+                    <!-- Nút mở modal xác nhận -->
                     <div class="d-grid mt-2">
-                        <button type="submit" class="btn btn-primary w-100"
-                                onclick="return confirm('Bạn có chắc chắn muốn đặt hàng không?')">
+                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmModal">
                             Xác nhận đặt hàng
                         </button>
                     </div>
                 </form>
-
             </div>
         </div>
-
     </div>
 </div>
+
+<!-- Modal xác nhận đặt hàng -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalLabel">Xác nhận đặt hàng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body">
+        Bạn có chắc chắn muốn đặt đơn hàng không?
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success" form="checkout-form">Đồng ý</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 {% endblock %}

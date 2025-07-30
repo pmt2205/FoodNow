@@ -32,7 +32,8 @@ class User(BaseModel, UserMixin):
     password = Column(String(100), nullable=False)
     name = Column(String(100), nullable=False)
     phone = Column(String(20), nullable=True)
-    address = Column(String(255), nullable=True)  # ➕ thêm dòng này
+    email = Column(String(100), nullable=False, unique=True)
+    address = Column(String(255), nullable=True)
     avatar = Column(String(255), default='https://default-avatar.com/default.jpg')
     role = Column(Enum(UserRole), default=UserRole.CUSTOMER)
 
@@ -163,6 +164,7 @@ if __name__ == '__main__':
             name='Admin',
             username='admin',
             password=hashlib.md5('123'.encode('utf-8')).hexdigest(),
+            email='admin@gmail.com',
             role=UserRole.ADMIN
         )
         db.session.add(admin)
@@ -172,6 +174,7 @@ if __name__ == '__main__':
             name='Nguyen Van A',
             username='nguyenvana',
             password=hashlib.md5('123456'.encode('utf-8')).hexdigest(),
+            email='nguyenvana@gmail.com',
             role=UserRole.CUSTOMER
         )
         db.session.add(user)
@@ -180,6 +183,7 @@ if __name__ == '__main__':
             name='Nguyen Van A',
             username='res1',
             password=hashlib.md5('123'.encode('utf-8')).hexdigest(),
+            email='nguyenvanaa@gmail.com',
             role=UserRole.RESTAURANT
         )
         db.session.add(user1)

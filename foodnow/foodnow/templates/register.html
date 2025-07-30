@@ -1,0 +1,83 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h2 class="text-center text-success fw-bold mb-4">Đăng Ký Người Dùng</h2>
+
+                        {% if err_msg %}
+                        <div class="alert alert-danger">{{ err_msg }}</div>
+                        {% endif %}
+
+                        <form method="post" action="/register" enctype="multipart/form-data">
+                            <div class="form-floating mb-3">
+                                <input required type="text" class="form-control" id="name" name="name" placeholder="Họ tên">
+                                <label for="name">Họ tên</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input required type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập">
+                                <label for="username">Tên đăng nhập</label>
+                            </div>
+
+                            <!-- Trường Email -->
+                            <div class="form-floating mb-3">
+                                <input required type="email" class="form-control" id="email" name="email" placeholder="Email">
+                                <label for="email">Email</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input required type="text" class="form-control" id="phone" name="phone" placeholder="Số điện thoại">
+                                <label for="phone">Số điện thoại</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input required type="text" class="form-control" id="address" name="address" placeholder="Địa chỉ">
+                                <label for="address">Địa chỉ</label>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="role" class="form-label fw-semibold">Vai trò</label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="CUSTOMER">Khách hàng</option>
+                                    <option value="RESTAURANT">Nhà hàng</option>
+                                </select>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input required type="password" class="form-control" id="password" name="password" placeholder="Mật khẩu">
+                                <label for="password">Mật khẩu</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input required type="password" class="form-control" id="confirm" name="confirm" placeholder="Xác nhận mật khẩu">
+                                <label for="confirm">Xác nhận mật khẩu</label>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="avatar" class="form-label fw-semibold">Ảnh đại diện</label>
+                                <input type="file" class="form-control" id="avatar" name="avatar">
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-user-plus me-2"></i>Đăng ký
+                                </button>
+                            </div>
+                        </form>
+
+                        <p class="mt-4 text-center text-muted">
+                            Đã có tài khoản? <a href="{{ url_for('login_process') }}" class="text-success fw-semibold">Đăng nhập</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

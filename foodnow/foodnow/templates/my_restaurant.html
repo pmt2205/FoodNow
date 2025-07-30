@@ -1,0 +1,91 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Quản lý Nhà Hàng</h2>
+
+    <form method="post" enctype="multipart/form-data" class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <input required type="text" name="name" class="form-control" placeholder="Tên nhà hàng">
+            </div>
+            <div class="col-md-6">
+                <input required type="text" name="address" class="form-control" placeholder="Địa chỉ">
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="phone" class="form-control" placeholder="Số điện thoại">
+            </div>
+            <div class="col-md-6">
+                <input type="file" name="image" class="form-control">
+            </div>
+            <div class="col-md-12">
+                <textarea name="description" class="form-control" placeholder="Mô tả"></textarea>
+            </div>
+        </div>
+        <div class="text-end mt-3">
+            <button type="submit" class="btn btn-success">Thêm Nhà Hàng</button>
+        </div>
+    </form>
+
+    <h3 class="fw-bold mt-5">Danh sách nhà hàng của bạn</h3>
+    <div class="row">
+        {% for r in restaurants %}
+        <div class="col-md-4">
+            <div class="card mb-3 position-relative">
+                {% if r.image %}
+                <img src="{{ r.image }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                {% endif %}
+
+                <!-- Dropdown dấu 3 chấm góc phải -->
+                <div class="position-absolute top-0 end-0 m-2">
+                    <div class="dropdown text-end">
+                        <button class="btn btn-sm p-1" type="button" id="dropdownRestaurant{{ r.id }}"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical fs-4 fw-bold text-white"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownRestaurant{{ r.id }}">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('edit_restaurant', restaurant_id=r.id) }}">
+                                    <i class="bi bi-pencil-square me-2"></i> Sửa
+                                </a>
+                            </li>
+                            <li>
+                                <form action="{{ url_for('delete_restaurant', restaurant_id=r.id) }}" method="post"
+                                      onsubmit="return confirm('Bạn chắc chắn muốn xóa nhà hàng này?')">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-trash me-2"></i> Xóa
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ r.name }}</h5>
+                    <p class="card-text">{{ r.description }}</p>
+
+                    <!-- Hiển thị trạng thái duyệt -->
+                    <p class="card-text">
+                        <strong>Trạng thái:</strong>
+                        {% if r.status.name == 'APPROVED' %}
+                            <span class="text-success">Đã duyệt</span>
+                        {% elif r.status.name == 'PENDING' %}
+                            <span class="text-warning">Đang chờ duyệt</span>
+                        {% elif r.status.name == 'REJECTED' %}
+                            <span class="text-danger">Bị từ chối</span>
+                        {% endif %}
+                    </p>
+
+                    <!-- Chỉ hiện nút quản lý menu nếu đã được duyệt -->
+                    {% if r.status.name == 'APPROVED' %}
+                        <a href="{{ url_for('manage_menu', restaurant_id=r.id) }}" class="btn btn-primary btn-sm">Quản lý menu</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
