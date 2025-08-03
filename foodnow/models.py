@@ -5,10 +5,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
-from foodnow import db, app
 from enum import Enum as RoleEnum
 from enum import Enum as RestaurantStatusEnum
 from enum import Enum as StatusEnum
+from FoodNow import db, app
 from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy.types import Enum as SQLAlchemyEnum
