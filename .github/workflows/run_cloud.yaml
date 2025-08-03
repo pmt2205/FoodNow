@@ -40,4 +40,38 @@ jobs:
           USER: ${{ secrets.VM_USER }}
           PORT: ${{ secrets.VM_PORT }}
         run: |
-          ssh -o StrictHostKeyChecking=no -p
+          ssh -o StrictHostKeyChecking=no -p $PORT $USER@$HOST "
+            # cai dat docker neu chua co
+            if ! command -v docker &>/dev/null; then
+               sudo apt-get update
+               sudo apt-get install -y docker.io
+               sudo systemctl enable docker
+               sudo systemctl start docker
+            fi
+            # cai dock-compose neu chua co
+            if ! command -v docker-compose &>/dev/null && ! docker compose version &>/dev/null; then
+               sudo apt-get update
+               sudo apt-get install -y docker-compose-plugin || \
+               (sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose)
+            fi
+            
+            # add user vao nhom docker
+            sudo usermod -aG docker ubuntu
+            
+            
+            # ghi dung dinh dang sudoers de tranh hong sudo
+            echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ubuntu
+          
+            # tao thu muc va giai nen ma nguon
+            mkdir -p /home/ubuntu/IndustryProject
+            tar xzf /home/ubuntu/app.tar.gz -C /home/ubuntu/IndustryProject --strip-components=1
+            rm home/ubuntu/app.tar.gz
+            cd home/ubuntu/IndustryProject
+          
+            # chay docker compose
+            if command -v docker-compose &>/dev/null; then
+                sudo docker-compose up -d build
+            else 
+                sudo docker-compose up -d build
+            fi
+         "
