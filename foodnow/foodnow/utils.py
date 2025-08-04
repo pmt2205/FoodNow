@@ -1,5 +1,5 @@
-from foodnow import app, db
-from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category
+from FoodNow import app, db
+from FoodNow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime
@@ -157,14 +157,14 @@ def revenue_by_restaurant():
      .group_by(Restaurant.name).all()
 
 
-def order_stats_by_month(year=datetime.now().year):
+def order_stats_by_month(year=datetime.now().year + 1):
     """Thống kê doanh thu theo tháng"""
     return db.session.query(
-        func.extract('month', Order.created_date).label('month'),
-        func.sum(Order.total_amount).label('revenue')
-    ).filter(func.extract('year', Order.created_date) == year)\
-     .group_by(func.extract('month', Order.created_date))\
-     .order_by(func.extract('month', Order.created_date)).all()
+        func.extract('month', Order.created_at).label('month'),
+        func.sum(Order.total).label('revenue')
+    ).filter(func.extract('year', Order.created_at) ==  year)\
+     .group_by(func.extract('month', Order.created_at))\
+     .order_by(func.extract('month', Order.created_at)).all()
 
 
 if __name__ == '__main__':

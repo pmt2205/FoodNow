@@ -1,11 +1,16 @@
-from foodnow import app, db, utils
-from foodnow.models import Restaurant, MenuItem, User, Order, OrderDetail, UserRole
+from FoodNow import app, db, utils
+from FoodNow.models import Restaurant, MenuItem, User, Order, OrderDetail, UserRole
 from flask_admin import Admin, BaseView, expose, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from flask import redirect
 from wtforms import SelectField
-from foodnow.models import RestaurantStatus
+from FoodNow.models import RestaurantStatus
+from FoodNow import db
+from datetime import datetime
+from FoodNow import utils
+from sqlalchemy import func
+from FoodNow.admin_view import RevenueByRestaurantYearView, UserStatsByMonthView
 
 
 class MyAdminIndexView(AdminIndexView):
@@ -71,10 +76,11 @@ class MenuItemView(AdminView):
 from wtforms import SelectField
 
 class UserView(AdminView):
-    column_list = ['username', 'name', 'phone', 'role']
+    column_list = ['id','username', 'name', 'phone', 'role']
     column_searchable_list = ['username', 'name']
     column_filters = ['username', 'name', 'role']
     column_labels = {
+        'id': 'Mã khách hàng',
         'username': 'Tên Đăng Nhập',
         'name': 'Họ Tên',
         'phone': 'Số Điện Thoại',
@@ -93,14 +99,16 @@ class UserView(AdminView):
 
 
 class OrderView(AdminView):
-    column_list = ['user_id', 'restaurant_id', 'status', 'created_at']
+    column_list = ['user_id', 'restaurant_id', 'status', 'created_at','total']
+    form_columns = ['user_id', 'restaurant_id', 'status', 'created_at', 'total']
     column_searchable_list = ['user_id']
     column_filters = ['status', 'created_at']
     column_labels = {
         'user_id': 'Khách Hàng',
         'restaurant_id': 'Nhà Hàng',
         'status': 'Trạng Thái',
-        'created_at': 'Ngày Tạo'
+        'created_at': 'Ngày Tạo',
+        'total': 'Tổng tiền'
     }
 
 class LogoutView(BaseView):
@@ -112,8 +120,26 @@ class LogoutView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated
 
+class StatsView(BaseView):
+    @expose('/')
+    def index(self):
+        year = datetime.now().year
+        stats = utils.order_stats_by_month(year)
+        labels = [f'Tháng {int(row.month)}' for row in stats]
+        values = [float(row.revenue) for row in stats]
+        return self.render('admin/stats.html',labels = labels, values = values, stats=stats, year=year)
+
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.role == UserRole.ADMIN
+
+
 admin.add_view(RestaurantView(Restaurant, db.session, name='Nhà Hàng'))
 admin.add_view(MenuItemView(MenuItem, db.session, name='Món Ăn'))
 admin.add_view(UserView(User, db.session, name='Người Dùng'))
 admin.add_view(OrderView(Order, db.session, name='Đơn Hàng'))
+admin.add_view(RevenueByRestaurantYearView(name='Thống kê doanh thu nhà hàng'))
+admin.add_view(UserStatsByMonthView(name='Người dùng mới'))
 admin.add_view(LogoutView(name='Đăng Xuất'))
+
+
+

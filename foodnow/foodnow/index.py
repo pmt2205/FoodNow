@@ -5,10 +5,10 @@ from sqlalchemy.sql import func
 from pytz import timezone, utc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from foodnow import app, db, login
+from FoodNow import app, db, login
 from flask import render_template, request, redirect, url_for, session, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
+from FoodNow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 
@@ -640,5 +640,5 @@ def inject_cart_count():
 
 if __name__ == '__main__':
     with app.app_context():
-        from foodnow import admin
+        from FoodNow import admin
         app.run(debug=True)

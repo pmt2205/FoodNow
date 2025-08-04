@@ -1,0 +1,51 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<h3 class="mb-4">Thống kê Doanh thu từng Nhà hàng theo Năm</h3>
+
+<canvas id="revenueChart" width="800" height="400"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+
+    const chartData = {
+        labels: {{ years | tojson }},
+        datasets: [
+            {% for restaurant, revenues in data.items() %}
+            {
+                label: '{{ restaurant }}',
+                data: {{ revenues | tojson }},
+                backgroundColor: 'rgba({{ 50 + loop.index0 * 30 }}, 100, 200, 0.6)',
+                borderColor: 'rgba({{ 50 + loop.index0 * 30 }}, 100, 200, 1)',
+                borderWidth: 1
+            },
+            {% endfor %}
+        ]
+    };
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: chartData,
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Doanh thu theo năm của từng nhà hàng'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('vi-VN') + ' đ';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
