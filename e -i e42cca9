@@ -1,0 +1,74 @@
+[33ma1ca462[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m)[m Update review, login google
+[33m42e36d4[m Update review, login google
+[33me42cca9[m[33m ([m[1;31morigin/develop[m[33m)[m github actions workflows
+[33m08a82e6[m manage content user, restaurants
+[33mfeae3f6[m  Dashboard tổng quan
+[33mfbd0372[m update API handle order
+[33m1b98763[m Update mail xac nhan và them mail vao user
+[33mee8f5ca[m Update gui mail xac nhan don hang va them email vao models user
+[33m2c4714e[m Sửa abc
+[33m41f4c8f[m UI đánh giá đơn hàng
+[33mef8104e[m UI chi tiet don hang
+[33m4d9b3be[m UI xem don hang
+[33m1b7adc0[m Update quản lý don hang, nhận xét
+[33m09913dc[m update logo update css
+[33m579d8f6[m Update search index
+[33m4744146[m Update search trang chủ
+[33m5ac3f83[m updat requirements.txt
+[33m47c21f6[m Merge branch 'develop' of https://github.com/pmt2205/FoodNow into develop
+[33me635a60[m Update quản lý nhà hang, menu, admin, trạng thái nhà hàng
+[33m886c26e[m filter find
+[33m1508d1d[m logout
+[33mb5c8bfe[m login
+[33mabcee27[m rm cart
+[33m028d4e3[m new db
+[33m59513e7[m change db
+[33mcd22e46[m new filter dishes
+[33mefd2969[m new
+[33m333e4be[m api-new
+[33m1c4fe2e[m update -controller
+[33m4541a9c[m Update card, info
+[33md7f4af5[m Search
+[33m4f2ee84[m[33m ([m[1;32mmain[m[33m)[m Nội dung commit
+[33m0ede964[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Delete a
+[33mec8c046[m Delete dc
+[33m67bba98[m Create dc
+[33m105bfc6[m Create a
+[33m2cb3f5c[m Initial commit
+[33ma1ca462[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdevelop[m[33m)[m Update review, login google
+[33m42e36d4[m Update review, login google
+[33me42cca9[m[33m ([m[1;31morigin/develop[m[33m)[m github actions workflows
+[33m08a82e6[m manage content user, restaurants
+[33mfeae3f6[m  Dashboard tổng quan
+[33mfbd0372[m update API handle order
+[33m1b98763[m Update mail xac nhan và them mail vao user
+[33mee8f5ca[m Update gui mail xac nhan don hang va them email vao models user
+[33m2c4714e[m Sửa abc
+[33m41f4c8f[m UI đánh giá đơn hàng
+[33mef8104e[m UI chi tiet don hang
+[33m4d9b3be[m UI xem don hang
+[33m1b7adc0[m Update quản lý don hang, nhận xét
+[33m09913dc[m update logo update css
+[33m579d8f6[m Update search index
+[33m4744146[m Update search trang chủ
+[33m5ac3f83[m updat requirements.txt
+[33m47c21f6[m Merge branch 'develop' of https://github.com/pmt2205/FoodNow into develop
+[33me635a60[m Update quản lý nhà hang, menu, admin, trạng thái nhà hàng
+[33m886c26e[m filter find
+[33m1508d1d[m logout
+[33mb5c8bfe[m login
+[33mabcee27[m rm cart
+[33m028d4e3[m new db
+[33m59513e7[m change db
+[33mcd22e46[m new filter dishes
+[33mefd2969[m new
+[33m333e4be[m api-new
+[33m1c4fe2e[m update -controller
+[33m4541a9c[m Update card, info
+[33md7f4af5[m Search
+[33m4f2ee84[m[33m ([m[1;32mmain[m[33m)[m Nội dung commit
+[33m0ede964[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Delete a
+[33mec8c046[m Delete dc
+[33m67bba98[m Create dc
+[33m105bfc6[m Create a
+[33m2cb3f5c[m Initial commit
