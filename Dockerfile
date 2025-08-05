@@ -1,38 +1,35 @@
 FROM python:3.11-slim
 
-# Đặt biến môi trường để không bị hỏi khi apt install
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Cài mysql client, git, openssh trước khi chuyển sang user không phải root
 RUN apt-get update && apt-get install -y \
     default-mysql-client \
     git \
     openssh-client \
- && rm -rf /var/lib/apt/lists/*  # Dọn dẹp để giảm dung lượng image
+ && rm -rf /var/lib/apt/lists/*
 
 # Tạo user không phải root
 RUN useradd --create-home --shell /bin/bash appuser
 
-# Chuyển sang user appuser
 USER appuser
-
-# Thêm github vào known_hosts để tránh lỗi khi clone SSH
-RUN mkdir -p /home/appuser/.ssh && \
-    ssh-keyscan github.com >> /home/appuser/.ssh/known_hosts && \
-    chmod 600 /home/appuser/.ssh/known_hosts
 
 # Thiết lập thư mục làm việc
 WORKDIR /home/appuser/app
 
-# Copy requirements và cài đặt thư viện Python
-COPY --chown=appuser:appuser requirements.txt .
+# Tránh lỗi khi clone qua SSH
+RUN mkdir -p /home/appuser/.ssh && \
+    ssh-keyscan github.com >> /home/appuser/.ssh/known_hosts && \
+    chmod 600 /home/appuser/.ssh/known_hosts
+
+# Copy requirements và cài thư viện
+COPY --chown=appuser:appuser requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy toàn bộ mã nguồn
 COPY --chown=appuser:appuser . .
 
-# Mở port 5000
+# Mở port 80 cho Flask
 EXPOSE 80
 
-# Chạy ứng dụng
-CMD ["sh", "-c", "sleep 15 && python run.py"]
+# Sửa CMD để trỏ đúng file chạy
+CMD ["sh", "-c", "sleep 15 && python Foodnow/index.py"]
