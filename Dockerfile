@@ -13,10 +13,9 @@ RUN useradd --create-home --shell /bin/bash appuser
 
 USER appuser
 
-# Thiết lập thư mục làm việc
 WORKDIR /home/appuser/app
 
-# Tránh lỗi khi clone qua SSH
+
 RUN mkdir -p /home/appuser/.ssh && \
     ssh-keyscan github.com >> /home/appuser/.ssh/known_hosts && \
     chmod 600 /home/appuser/.ssh/known_hosts
