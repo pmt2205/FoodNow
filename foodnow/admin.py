@@ -23,7 +23,6 @@ class RestaurantView(AdminView):
     column_list = ['name', 'address', 'phone', 'user_id', 'status']
     column_searchable_list = ['name', 'address']
     column_filters = ['name', 'address', 'status']
-
     column_labels = {
         'name': 'Tên Nhà Hàng',
         'address': 'Địa Chỉ',
