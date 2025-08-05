@@ -3,7 +3,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ develop ]
-
 jobs:
   deploy:
     runs-on: self-hosted
