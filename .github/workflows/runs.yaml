@@ -11,9 +11,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Show docker info (debug)
+        run: |
+          docker --version
+          docker compose version
+
       - name: Deploy app
         run: |
           pwd
           ls -la
           git pull
-          docker-compose up -d --build
+          docker compose up -d --build
