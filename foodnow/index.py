@@ -5,10 +5,10 @@ from sqlalchemy.sql import func
 from pytz import timezone, utc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from FoodNow import app, db, login
+from foodnow import app, db, login
 from flask import render_template, request, redirect, url_for, session, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from FoodNow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
+from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 
