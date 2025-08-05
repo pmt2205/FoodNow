@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from enum import Enum as RoleEnum
 from enum import Enum as RestaurantStatusEnum
 from enum import Enum as StatusEnum
-from FoodNow import db, app
+from foodnow import db, app
 from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy.types import Enum as SQLAlchemyEnum

@@ -639,5 +639,4 @@ def inject_cart_count():
 
 if __name__ == '__main__':
     with app.app_context():
-        from FoodNow import admin
         app.run(debug=True)
