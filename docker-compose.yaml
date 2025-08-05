@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: host_app_cloud
+    ports:
+      - "80:80"
+    environment:
+      - DB_HOST=db-test.cb7hspzehogr.us-east-1.rds.amazonaws.com
+      - DB_USER=lehongduc3491
+      - DB_PASSWORD=123456789a
+      - DB_NAME=fooddb
