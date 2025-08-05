@@ -637,7 +637,6 @@ def inject_cart_count():
         count = CartItem.query.filter_by(user_id=current_user.id).count()
     return dict(cart_count=count)
 
-
 if __name__ == '__main__':
     with app.app_context():
         from FoodNow import admin
