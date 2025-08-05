@@ -15,7 +15,6 @@ USER appuser
 
 WORKDIR /home/appuser/app
 
-
 RUN mkdir -p /home/appuser/.ssh && \
     ssh-keyscan github.com >> /home/appuser/.ssh/known_hosts && \
     chmod 600 /home/appuser/.ssh/known_hosts
