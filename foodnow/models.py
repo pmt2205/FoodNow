@@ -20,7 +20,6 @@ class UserRole(RoleEnum):
     CUSTOMER = "CUSTOMER"
     RESTAURANT = "RESTAURANT"
 
-
 class BaseModel(db.Model):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
