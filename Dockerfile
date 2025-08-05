@@ -9,5 +9,5 @@ COPY . .
 
 EXPOSE 80
 
-CMD ["python", "FoodNow/FoodNow/index.py"]
+CMD ["python", "foodnow/index.py"]
 
