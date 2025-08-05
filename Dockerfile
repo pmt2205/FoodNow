@@ -30,4 +30,4 @@ COPY --chown=appuser:appuser . .
 EXPOSE 80
 
 # Sửa CMD để trỏ đúng file chạy
-CMD ["sh", "-c", "sleep 15 && python Foodnow/index.py"]
+CMD ["sh", "-c", "sleep 15 && python FoodNow/index.py"]
