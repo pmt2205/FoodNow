@@ -30,7 +30,6 @@ class RestaurantView(AdminView):
         'user_id': 'Chủ Nhà Hàng',
         'status': 'Trạng Thái'
     }
-
     form_columns = ['name', 'address', 'phone', 'image', 'description', 'user_id', 'status']
 
     # 👉 Thêm dòng này để override field Enum thành SelectField
