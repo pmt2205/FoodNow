@@ -21,6 +21,70 @@ app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'            # Mật khẩu �
 mail = Mail(app)
 
 
+<<<<<<< HEAD
+=======
+from flask import Flask, redirect, url_for
+from flask_dance.contrib.google import make_google_blueprint, google
+from flask_login import LoginManager, login_user
+import os
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+
+# Cấu hình Google OAuth
+google_bp = make_google_blueprint(
+    redirect_to='google_login',
+    scope=[
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "openid"
+    ]
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+login_manager = LoginManager(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))  # hoặc get_user_by_id(user_id)
+
+
+@app.route('/google')
+def google_login():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        flash("Không thể lấy thông tin từ Google", "danger")
+        return redirect(url_for("login"))
+
+    info = resp.json()
+    print("Google user info:", info)  # ✅ In ra để debug
+
+    # Xử lý email fallback
+    email = info.get("email")
+    if not email:
+        email = f'{info["id"]}@google.local'  # Tạo email giả nếu thiếu
+        flash("Google không cấp email, sử dụng tạm.", "warning")
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(
+            name=info.get("name", "Google User"),
+            email=email,
+            username=f'google_{info["id"]}',
+            password='',  # Không cần mật khẩu
+            avatar=info.get("picture")
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('home'))
+
+
+>>>>>>> b9023a6 (Update review, login google (no secrets))
 @app.route('/pay/momo')
 @login_required
 def pay_with_momo():
