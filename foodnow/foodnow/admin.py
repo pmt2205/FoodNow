@@ -10,7 +10,7 @@ from FoodNow import db
 from datetime import datetime
 from FoodNow import utils
 from sqlalchemy import func
-from FoodNow.admin_view import RevenueByRestaurantYearView, UserStatsByMonthView
+from FoodNow.admin_views import RevenueByRestaurantYearView, UserStatsByMonthView
 
 
 class MyAdminIndexView(AdminIndexView):

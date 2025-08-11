@@ -157,14 +157,14 @@ def revenue_by_restaurant():
      .group_by(Restaurant.name).all()
 
 
-def order_stats_by_month(year=datetime.now().year + 1):
+def order_stats_by_month(year=datetime.now().year):
     """Thống kê doanh thu theo tháng"""
     return db.session.query(
-        func.extract('month', Order.created_at).label('month'),
-        func.sum(Order.total).label('revenue')
-    ).filter(func.extract('year', Order.created_at) ==  year)\
-     .group_by(func.extract('month', Order.created_at))\
-     .order_by(func.extract('month', Order.created_at)).all()
+        func.extract('month', Order.created_date).label('month'),
+        func.sum(Order.total_amount).label('revenue')
+    ).filter(func.extract('year', Order.created_date) == year)\
+     .group_by(func.extract('month', Order.created_date))\
+     .order_by(func.extract('month', Order.created_date)).all()
 
 
 if __name__ == '__main__':
