@@ -1,5 +1,5 @@
-from FoodNow import app, db
-from FoodNow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category
+from foodnow import app, db
+from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime

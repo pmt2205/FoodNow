@@ -1,16 +1,16 @@
-from FoodNow import app, db, utils
-from FoodNow.models import Restaurant, MenuItem, User, Order, OrderDetail, UserRole
+from foodnow import app, db, utils
+from foodnow.models import Restaurant, MenuItem, User, Order, OrderDetail, UserRole, Coupon
 from flask_admin import Admin, BaseView, expose, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from flask import redirect
 from wtforms import SelectField
-from FoodNow.models import RestaurantStatus
-from FoodNow import db
+from foodnow.models import RestaurantStatus
+from foodnow import db
 from datetime import datetime
-from FoodNow import utils
+from foodnow import utils
 from sqlalchemy import func
-from FoodNow.admin_views import RevenueByRestaurantYearView, UserStatsByMonthView
+from foodnow.admin_views import RevenueByRestaurantYearView, UserStatsByMonthView
 
 
 class MyAdminIndexView(AdminIndexView):
@@ -18,7 +18,7 @@ class MyAdminIndexView(AdminIndexView):
     def index(self):
         return self.render('admin/index.html')
 
-admin = Admin(app=app, name="FoodNow Admin", template_mode="bootstrap4", index_view=MyAdminIndexView())
+admin = Admin(app=app, name="foodnow Admin", template_mode="bootstrap4", index_view=MyAdminIndexView())
 
 class AdminView(ModelView):
     def is_accessible(self):
@@ -132,6 +132,22 @@ class StatsView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.role == UserRole.ADMIN
 
+class CouponAdmin(ModelView):
+    column_list = ['code', 'discount_percent', 'max_usage', 'expires_at', 'created_at']
+    form_columns = ['code', 'discount_percent', 'max_usage', 'expires_at']
+    column_labels = {
+        'code': 'Mã giảm giá',
+        'discount_percent': '% giảm',
+        'max_usage': 'Số lần tối đa',
+        'used_count': 'Đã sử dụng',
+        'expires_at': 'Ngày hết hạn',
+        'created_at': 'Ngày tạo'
+    }
+
+    # Chỉ admin mới có quyền truy cập
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.role == UserRole.ADMIN
+
 
 admin.add_view(RestaurantView(Restaurant, db.session, name='Nhà Hàng'))
 admin.add_view(MenuItemView(MenuItem, db.session, name='Món Ăn'))
@@ -139,6 +155,7 @@ admin.add_view(UserView(User, db.session, name='Người Dùng'))
 admin.add_view(OrderView(Order, db.session, name='Đơn Hàng'))
 admin.add_view(RevenueByRestaurantYearView(name='Thống kê doanh thu nhà hàng'))
 admin.add_view(UserStatsByMonthView(name='Người dùng mới'))
+admin.add_view(CouponAdmin(Coupon, db.session, name='Giảm giá'))
 admin.add_view(LogoutView(name='Đăng Xuất'))
 
 

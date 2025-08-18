@@ -31,10 +31,12 @@
                             </div>
 
                             <div class="form-floating mb-3">
-                                <input required type="text" class="form-control" id="phone" name="phone" placeholder="Số điện thoại">
+                                <input required type="text" class="form-control" id="phone" name="phone"
+                                       placeholder="Số điện thoại"
+                                       pattern="^0\d{9}$"
+                                       title="Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số">
                                 <label for="phone">Số điện thoại</label>
                             </div>
-
                             <div class="form-floating mb-3">
                                 <input required type="text" class="form-control" id="address" name="address" placeholder="Địa chỉ">
                                 <label for="address">Địa chỉ</label>

@@ -1,14 +1,14 @@
 import sys, os, utils, requests, uuid, hmac, hashlib
 from datetime import datetime
 from sqlalchemy.sql import func
-
+import re
 from pytz import timezone, utc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from FoodNow import app, db, login
+from foodnow import app, db, login
 from flask import render_template, request, redirect, url_for, session, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from FoodNow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
+from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 
@@ -21,8 +21,7 @@ app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'            # Mật khẩu �
 mail = Mail(app)
 
 
-<<<<<<< HEAD
-=======
+
 from flask import Flask, redirect, url_for
 from flask_dance.contrib.google import make_google_blueprint, google
 from flask_login import LoginManager, login_user
@@ -84,7 +83,6 @@ def google_login():
     return redirect(url_for('home'))
 
 
->>>>>>> b9023a6 (Update review, login google (no secrets))
 @app.route('/pay/momo')
 @login_required
 def pay_with_momo():
@@ -429,12 +427,12 @@ def checkout():
 
     # --- Gửi Email thông báo đơn hàng ---
     try:
-        msg = Message("Xác nhận đơn hàng - FoodNow",
+        msg = Message("Xác nhận đơn hàng - foodnow",
                       sender=app.config['MAIL_USERNAME'],
                       recipients=[current_user.email])
         msg.body = f"""Chào {current_user.name},
 
-Bạn đã đặt hàng thành công tại FoodNow.
+Bạn đã đặt hàng thành công tại foodnow.
 
 Chi tiết đơn hàng:
 {chr(10).join(content_lines)}
@@ -555,7 +553,19 @@ def register_process():
     if request.method == 'POST':
         password = request.form.get('password')
         confirm = request.form.get('confirm')
+        username = request.form.get('username')
+        email = request.form.get('email')
+        pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
 
+        if not password:
+            flash("Mật khẩu không được để trống!", "error")
+        if User.query.filter_by(email=email).first():
+            return render_template("register.html", err_msg="Email đã được sử dụng!")
+        if User.query.filter_by(username=username).first():
+            return render_template("register.html", err_msg="Tên đăng nhập đã tồn tại!")
+        elif not re.match(pattern, password):
+            flash("Mật khẩu phải ≥8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt!", "error")
+            return render_template("register.html", err_msg="Mật khẩu không hợp lệ!")
         if password == confirm:
             data = request.form.copy()
             del data['confirm']
@@ -595,9 +605,11 @@ def profile():
             phone = request.form.get('phone')
             dob = request.form.get('dob')
             email = request.form.get('email', '').strip()
-
+            address = request.form.get('address', '').strip()
             if not email:
                 error_msg = 'Email không được để trống!'
+            elif not re.match(r"^0\d{9}$", phone or ""):
+                error_msg = 'Số điện thoại không hợp lệ! Phải bắt đầu bằng 0 và có đúng 10 số.'
             else:
                 # Kiểm tra email đã được tài khoản khác sử dụng chưa
                 existing_user = User.query.filter(User.email == email, User.id != user.id).first()
@@ -608,7 +620,7 @@ def profile():
                     user.phone = phone
                     user.dob = dob
                     user.email = email
-
+                    user.address = address
                     avatar = request.files.get('avatar')
                     if avatar and avatar.filename != '':
                         filename = secure_filename(avatar.filename)
@@ -703,5 +715,5 @@ def inject_cart_count():
 
 if __name__ == '__main__':
     with app.app_context():
-        from FoodNow import admin
+        from foodnow import admin
         app.run(debug=True, host="0.0.0.0", port=80)

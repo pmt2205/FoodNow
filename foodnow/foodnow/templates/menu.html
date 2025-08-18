@@ -12,6 +12,16 @@
                     <h2 class="display-5 fw-bold">{{ restaurant.name }}</h2>
                     <p class="text-muted mb-1">{{ restaurant.description }}</p>
                     <p class="text-muted mb-0">{{ restaurant.address }}</p>
+                    <div class="col-12">
+                        <iframe id="mapFrame"
+                                width="100%"
+                                height="300"
+                                style="border:0;"
+                                allowfullscreen
+                                loading="lazy"
+                                src="https://www.google.com/maps?q={{ restaurant.address | urlencode }}&output=embed">
+                        </iframe>
+                    </div>
                 </div>
 
                 {% if average_rating %}
@@ -110,5 +120,13 @@
     {% endif %}
 
 </div>
-
+<script>
+function updateMap() {
+    let address = document.getElementById("address").value;
+    if (address.trim() !== "") {
+        let mapUrl = "https://www.google.com/maps?q=" + encodeURIComponent(address) + "&output=embed";
+        document.getElementById("mapFrame").src = mapUrl;
+    }
+}
+</script>
 {% endblock %}

@@ -45,7 +45,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Email</label>
-                        <input type="text" name="email" value="{{ user.email }}" class="form-control" required>
+                        <input type="email" name="email" value="{{ user.email }}" class="form-control" required>
                     </div>
 
                     <div class="col-md-6">
@@ -57,10 +57,22 @@
                         <label class="form-label">Số điện thoại</label>
                         <input type="tel" name="phone" value="{{ user.phone }}" class="form-control">
                     </div>
-
                     <div class="col-md-6">
-                        <label class="form-label">Địa chỉ</label>
-                        <input type="email" value="{{ user.address }}" class="form-control bg-light" readonly>
+    <label class="form-label">Địa chỉ</label>
+    <input type="text" name="address" id="address"
+           value="{{ user.address }}" class="form-control" oninput="updateMap()">
+</div>
+
+<!-- Google Map hiển thị địa chỉ -->
+                    <div class="col-12">
+                        <iframe id="mapFrame"
+                                width="100%"
+                                height="300"
+                                style="border:0;"
+                                allowfullscreen
+                                loading="lazy"
+                                src="https://www.google.com/maps?q={{ user.address | urlencode }}&output=embed">
+                        </iframe>
                     </div>
 
                     <div class="col-md-6">
@@ -134,5 +146,13 @@
 
     </div>
 </div>
-
+<script>
+function updateMap() {
+    let address = document.getElementById("address").value;
+    if (address.trim() !== "") {
+        let mapUrl = "https://www.google.com/maps?q=" + encodeURIComponent(address) + "&output=embed";
+        document.getElementById("mapFrame").src = mapUrl;
+    }
+}
+</script>
 {% endblock %}

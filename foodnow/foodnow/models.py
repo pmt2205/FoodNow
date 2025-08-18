@@ -8,9 +8,9 @@ from sqlalchemy.orm import relationship
 from enum import Enum as RoleEnum
 from enum import Enum as RestaurantStatusEnum
 from enum import Enum as StatusEnum
-from FoodNow import db, app
+from foodnow import db, app
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime,timedelta
 from sqlalchemy.types import Enum as SQLAlchemyEnum
 
 
@@ -119,7 +119,7 @@ class Order(db.Model):
     restaurant_id = db.Column(db.Integer, db.ForeignKey(Restaurant.id))
     status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
     total = db.Column(db.Float)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     address = db.Column(db.String(255))
     phone = db.Column(db.String(20))
 
@@ -148,12 +148,31 @@ class Review(BaseModel):
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 
     user = relationship('User', back_populates='reviews')
     restaurant = relationship('Restaurant', back_populates='reviews')
 
+class Coupon(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    code = db.Column(db.String(50), unique=True, nullable=False)   # Mã giảm giá
+    discount_percent = db.Column(db.Integer, nullable=False)       # % giảm
+    max_usage = db.Column(db.Integer, nullable=False, default=1)   # Số lần sử dụng tối đa
+    used_count = db.Column(db.Integer, default=0)                  # Đã sử dụng bao nhiêu lần
+    expires_at = db.Column(db.DateTime, nullable=True)             # Ngày hết hạn
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    def is_valid(self):
+        """Kiểm tra mã còn hạn và chưa vượt quá số lần sử dụng"""
+        if self.expires_at and datetime.now() > self.expires_at:
+            return False
+        if self.used_count >= self.max_usage:
+            return False
+        return True
+
+    def __str__(self):
+        return f"{self.code} ({self.discount_percent}%)"
 
 
 if __name__ == '__main__':
@@ -313,7 +332,14 @@ if __name__ == '__main__':
             image='https://images.unsplash.com/photo-1615486369604-6cc8e9ae4a8b',
             restaurant_id=nha_hang.id, category_id=cat_nuoc_uong.id)
         # mon4, mon5, mon6, mon7, mon8, mon9, mon10, mon11,
-        db.session.add_all([ mon12, mon13])
+        new_coupon = Coupon(
+            code="FREESHIP10",  # Mã giảm giá
+            discount_percent=10,  # Giảm 10%
+            max_usage=5,  # Tối đa 5 lần sử dụng
+            used_count=0,  # Chưa dùng lần nào
+            expires_at=datetime.now() + timedelta(days=30)  # Hết hạn sau 30 ngày
+        )
+        db.session.add_all([ mon12, mon13, new_coupon])
         db.session.commit()
 
         print("✅ Đã thêm 6 nhà hàng và 10 món ăn mới!")

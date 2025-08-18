@@ -1,8 +1,8 @@
 from flask_admin import BaseView, expose
 from sqlalchemy import extract, func
-from FoodNow.models import Order, Restaurant
-from FoodNow import db
-from FoodNow.models import User
+from foodnow.models import Order, Restaurant
+from foodnow import db
+from foodnow.models import User
 from datetime import datetime
 
 class RevenueByRestaurantYearView(BaseView):
