@@ -132,21 +132,23 @@ class StatsView(BaseView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.role == UserRole.ADMIN
 
-class CouponAdmin(ModelView):
-    column_list = ['code', 'discount_percent', 'max_usage', 'expires_at', 'created_at']
+
+class CouponAdmin(AdminView):
+    # Các cột hiển thị trong list view
+    column_list = ['code', 'discount_percent', 'max_usage', 'used_count', 'created_at','expires_at']
+
+    # Các cột cho phép nhập khi thêm/sửa
     form_columns = ['code', 'discount_percent', 'max_usage', 'expires_at']
+
+    # Nhãn hiển thị
     column_labels = {
         'code': 'Mã giảm giá',
         'discount_percent': '% giảm',
         'max_usage': 'Số lần tối đa',
         'used_count': 'Đã sử dụng',
-        'expires_at': 'Ngày hết hạn',
-        'created_at': 'Ngày tạo'
+        'created_at': 'Ngày tạo',
+        'expires_at': 'Ngày hết hạn'
     }
-
-    # Chỉ admin mới có quyền truy cập
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.role == UserRole.ADMIN
 
 
 admin.add_view(RestaurantView(Restaurant, db.session, name='Nhà Hàng'))

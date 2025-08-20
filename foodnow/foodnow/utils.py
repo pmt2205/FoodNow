@@ -1,5 +1,7 @@
+from flask import flash
+
 from foodnow import app, db
-from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category
+from foodnow.models import User, UserRole, Restaurant, MenuItem, CartItem, Order, OrderDetail, Category,Coupon
 from flask_login import current_user
 from sqlalchemy import func
 from datetime import datetime
@@ -145,6 +147,17 @@ def save_order(user_id, restaurant_id):
 
 
 
+def calculate_total_price(cart, coupon_code=None):
+    subtotal = sum(item.menu_item.price * item.quantity for item in cart)
+    discount = 0
+
+    if coupon_code:
+        coupon = Coupon.query.filter_by(code=coupon_code.strip().upper()).first()
+        if coupon and coupon.is_valid(subtotal=subtotal):
+            discount = subtotal * (coupon.discount_percent / 100)
+
+    total = subtotal - discount
+    return subtotal, discount, total
 
 # ------------------- THỐNG KÊ / ADMIN ------------------- #
 

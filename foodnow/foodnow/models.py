@@ -163,14 +163,24 @@ class Coupon(db.Model):
     used_count = db.Column(db.Integer, default=0)                  # Đã sử dụng bao nhiêu lần
     expires_at = db.Column(db.DateTime, nullable=True)             # Ngày hết hạn
     created_at = db.Column(db.DateTime, default=datetime.now)
+    min_order_value = db.Column(db.Integer, default=0)
 
-    def is_valid(self):
-        """Kiểm tra mã còn hạn và chưa vượt quá số lần sử dụng"""
+    def is_valid(self, subtotal=None):
+        """Kiểm tra hạn dùng, số lần sử dụng và giá trị tối thiểu"""
         if self.expires_at and datetime.now() > self.expires_at:
             return False
         if self.used_count >= self.max_usage:
             return False
+        if subtotal is not None and subtotal < self.min_order_value:
+            return False
         return True
+
+    @staticmethod
+    def find_by_code(code):
+        """Tìm coupon không phân biệt hoa thường"""
+        return Coupon.query.filter(
+            db.func.lower(Coupon.code) == code.lower()
+        ).first()
 
     def __str__(self):
         return f"{self.code} ({self.discount_percent}%)"
@@ -338,9 +348,18 @@ if __name__ == '__main__':
             discount_percent=10,  # Giảm 10%
             max_usage=5,  # Tối đa 5 lần sử dụng
             used_count=0,  # Chưa dùng lần nào
+            min_order_value = 100000,
             expires_at=datetime.now() + timedelta(days=30)  # Hết hạn sau 30 ngày
         )
-        db.session.add_all([ mon12, mon13, new_coupon])
+        new_coupon1 = Coupon(
+            code="FREESHIP20",  # Mã giảm giá
+            discount_percent=20,  # Giảm 10%
+            max_usage=5,  # Tối đa 5 lần sử dụng
+            used_count=0,  # Chưa dùng lần nào
+            min_order_value=150000,
+            expires_at=datetime.now() + timedelta(days=30)  # Hết hạn sau 30 ngày
+        )
+        db.session.add_all([ mon12, mon13, new_coupon,new_coupon1])
         db.session.commit()
 
         print("✅ Đã thêm 6 nhà hàng và 10 món ăn mới!")

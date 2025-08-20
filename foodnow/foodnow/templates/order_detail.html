@@ -36,7 +36,8 @@
                 </div>
                 <div class="text-end">
                     <div>Đơn giá: {{ '{:,.0f} đ'.format(item.price) }}</div>
-                    <div>Thành tiền: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity) }}</strong></div>
+                    <div>Thành tiền: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity ) }}</strong></div>
+                    <div>Giảm giá: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity - order.total ) }}</strong></div>
                 </div>
             </div>
             {% endfor %}
