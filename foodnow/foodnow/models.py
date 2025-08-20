@@ -122,6 +122,7 @@ class Order(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     address = db.Column(db.String(255))
     phone = db.Column(db.String(20))
+    payment_method = db.Column(db.String(20))
 
     details = db.relationship('OrderDetail', backref='order', lazy=True)
 

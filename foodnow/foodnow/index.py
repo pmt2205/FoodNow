@@ -6,28 +6,21 @@ from pytz import timezone, utc
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from foodnow import app, db, login
-from flask import render_template, request, redirect, url_for, session, flash
-from flask_login import login_user, logout_user, login_required, current_user
-from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, Review
+from flask import render_template, request, redirect, url_for, session, flash, Flask
+from flask_login import login_user, logout_user, login_required, current_user, LoginManager
+from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, \
+    Review
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
+from flask_dance.contrib.google import make_google_blueprint, google
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'nguyenphu1999f@gmail.com'         # Thay bằng email của bạn
-app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'            # Mật khẩu ứng dụng (không phải mật khẩu Gmail)
-
+app.config['MAIL_USERNAME'] = 'nguyenphu1999f@gmail.com'  # Thay bằng email của bạn
+app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'  # Mật khẩu ứng dụng (không phải mật khẩu Gmail)
 mail = Mail(app)
-
-
-
-from flask import Flask, redirect, url_for
-from flask_dance.contrib.google import make_google_blueprint, google
-from flask_login import LoginManager, login_user
-import os
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
 
 # Cấu hình Google OAuth
 google_bp = make_google_blueprint(
@@ -83,65 +76,241 @@ def google_login():
     return redirect(url_for('home'))
 
 
-@app.route('/pay/momo')
+def calculate_total_price(cart, coupon_code=None):
+    """Hàm tính tổng tiền từ giỏ hàng + áp dụng mã giảm giá"""
+    subtotal = sum(item.menu_item.price * item.quantity for item in cart)
+    discount = 0
+
+    if coupon_code and coupon_code.lower() == "giam10":
+        discount = subtotal * 0.1
+    total = subtotal - discount
+    return subtotal, discount, total
+
+
+def send_order_email(order, user):
+    try:
+        # Tạo danh sách chi tiết món
+        content_lines = [
+            f"{item.menu_item.name} x {item.quantity} = {item.menu_item.price * item.quantity:,} VNĐ"
+            for item in OrderDetail.query.filter_by(order_id=order.id).all()
+        ]
+
+        msg = Message(
+            "Xác nhận đơn hàng - FoodNow",
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[user.email]
+        )
+
+        total = order.total
+        address = order.address
+        phone = order.phone
+
+        msg.body = f"""Chào {user.name},
+
+Bạn đã đặt hàng thành công tại FoodNow. Chi tiết đơn hàng:
+
+{chr(10).join(content_lines)}
+
+Tổng cộng: {total:,} VNĐ
+Địa chỉ giao hàng: {address}
+Số điện thoại: {phone}
+
+Cảm ơn bạn đã sử dụng dịch vụ!
+"""
+        mail.send(msg)
+    except Exception as e:
+        print("Không gửi được mail:", str(e))
+
+
+@app.route("/checkout", methods=["POST"])
 @login_required
-def pay_with_momo():
+def checkout():
+    cart = CartItem.query.filter_by(user_id=current_user.id).all()
+    if not cart:
+        flash("Giỏ hàng trống!", "danger")
+        return redirect(url_for("cart"))
+
+    address = request.form.get("address")
+    phone = request.form.get("phone")
+    coupon = request.form.get("coupon")
+    payment_method = request.form.get("payment_method")
+
+    # --- Tính toán tiền ---
+    subtotal, discount, total_price = calculate_total_price(cart, coupon)
+
+    # --- Tạo Order ---
+    restaurant_id = cart[0].menu_item.restaurant_id
+    order = Order(
+        user_id=current_user.id,
+        restaurant_id=restaurant_id,
+        address=address,
+        phone=phone,
+        total=total_price,
+        status=OrderStatus.PENDING,
+        payment_method=payment_method
+    )
+    db.session.add(order)
+    db.session.commit()
+
+    # --- Thêm chi tiết Order ---
+    for item in cart:
+        detail = OrderDetail(
+            order_id=order.id,
+            menu_item_id=item.menu_item.id,
+            quantity=item.quantity,
+            price=item.menu_item.price
+        )
+        db.session.add(detail)
+
+    db.session.commit()
+
+    # Xóa giỏ hàng sau khi tạo đơn
+    CartItem.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+
+    # --- Tùy theo phương thức thanh toán ---
+    if payment_method == "cod":
+        order.status = OrderStatus.PENDING
+        db.session.commit()
+        send_order_email(order, current_user)
+        flash("Đơn hàng đã được đặt thành công. Vui lòng kiểm tra email để xem chi tiết đơn hàng.", "success")
+        return redirect(url_for("view_order_detail", order_id=order.id))
+
+
+    elif payment_method == "momo":
+        # gọi API momo
+        return redirect(url_for("create_momo_payment", order_id=order.id))
+
+    else:
+        flash("Phương thức thanh toán không hợp lệ", "danger")
+        return redirect(url_for("cart"))
+
+
+@app.route("/create_momo_payment/<int:order_id>")
+@login_required
+def create_momo_payment(order_id):
+    import time
+    order = Order.query.get_or_404(order_id)
+
     endpoint = "https://test-payment.momo.vn/v2/gateway/api/create"
-    partner_code = "MOMO"
-    access_key = "F8BBA842ECF85"
-    secret_key = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+    partnerCode = "MOMO"
+    accessKey = "F8BBA842ECF85"
+    secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
 
-    order_id = str(uuid.uuid4())
-    request_id = str(uuid.uuid4())
-    amount = "1000"
-    order_info = "Thanh toán đơn hàng qua Momo"
-    redirect_url = "https://your-ngrok-url.ngrok.io/payment-success"
-    ipn_url = "https://your-ngrok-url.ngrok.io/momo_ipn"
-    extra_data = ""
-    request_type = "captureWallet"
+    orderId = str(int(time.time()))
+    requestId = str(int(time.time() * 1000))
+    orderInfo = f"Thanh toán MoMo cho đơn #{order.id}"
 
-    raw_signature = f"accessKey={access_key}&amount={amount}&extraData={extra_data}&ipnUrl={ipn_url}&orderId={order_id}&orderInfo={order_info}&partnerCode={partner_code}&redirectUrl={redirect_url}&requestId={request_id}&requestType={request_type}"
-    signature = hmac.new(secret_key.encode(), raw_signature.encode(), hashlib.sha256).hexdigest()
+    redirectUrl = url_for("payment_return", _external=True)
+    ipnUrl = url_for("momo_ipn", _external=True)
+    extraData = str(order.id)  # để khi return biết order nào
+    requestType = "captureWallet"
 
-    data = {
-        "partnerCode": partner_code,
-        "accessKey": access_key,
-        "requestId": request_id,
-        "amount": amount,
-        "orderId": order_id,
-        "orderInfo": order_info,
-        "redirectUrl": redirect_url,
-        "ipnUrl": ipn_url,
-        "extraData": extra_data,
-        "requestType": request_type,
+    raw_signature = (
+        f"accessKey={accessKey}"
+        f"&amount={int(order.total)}"
+        f"&extraData={extraData}"
+        f"&ipnUrl={ipnUrl}"
+        f"&orderId={orderId}"
+        f"&orderInfo={orderInfo}"
+        f"&partnerCode={partnerCode}"
+        f"&redirectUrl={redirectUrl}"
+        f"&requestId={requestId}"
+        f"&requestType={requestType}"
+    )
+
+    signature = hmac.new(secretKey.encode("utf-8"),
+                         raw_signature.encode("utf-8"),
+                         hashlib.sha256).hexdigest()
+
+    payload = {
+        "partnerCode": partnerCode,
+        "accessKey": accessKey,
+        "requestId": requestId,
+        "amount": str(int(order.total)),
+        "orderId": orderId,
+        "orderInfo": orderInfo,
+        "redirectUrl": redirectUrl,
+        "ipnUrl": ipnUrl,
+        "extraData": extraData,
+        "requestType": requestType,
         "signature": signature,
         "lang": "vi"
     }
 
-    print("Payload gửi lên:", data)
+    res = requests.post(endpoint, json=payload).json()
+    if res.get("resultCode") == 0 and "payUrl" in res:
+        return redirect(res["payUrl"])
+    else:
+        return f"Lỗi MoMo: {res}", 400
 
-    response = requests.post(endpoint, json=data)
-    res_data = response.json()
-    print("Phản hồi từ Momo:", res_data)
 
-    if 'payUrl' not in res_data:
-        return f"Lỗi từ Momo: {res_data.get('message', 'Không xác định')} - Chi tiết: {res_data}", 400
+@app.route("/payment_return")
+def payment_return():
+    result_code = request.args.get("resultCode")
+    message = request.args.get("message", "")
+    extra_data = request.args.get("extraData")  # chính là order_id mình truyền
+    order_id = extra_data if extra_data else None
 
-    return redirect(res_data['payUrl'])
+    if result_code == "0" and order_id:
+        order = Order.query.get(order_id)
+        if order:
+            order.status = OrderStatus.PENDING
+            db.session.commit()
+            send_order_email(order, order.user)  # Gửi mail sau khi thanh toán MoMo thành công
+        return redirect(url_for("view_order_detail", order_id=order_id))
+    else:
+        return f"Thanh toán thất bại hoặc bị hủy. Mã: {result_code} - {message}", 400
 
-@app.route('/payment-success')
-def payment_success():
-    # có thể lấy params từ request.args để xử lý thêm
-    return "Thanh toán thành công! 🎉"
 
-@app.route('/momo_ipn', methods=['POST'])
+@app.route("/momo_ipn", methods=["POST"])
 def momo_ipn():
-    # Momo sẽ gọi lại endpoint này để xác nhận đơn hàng
-    data = request.json
-    print("Momo IPN callback:", data)
+    accessKey = "F8BBA842ECF85"
+    secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
 
-    # TODO: xác minh chữ ký nếu cần, cập nhật DB đơn hàng v.v.
-    return '', 200  # trả về 200 OK để Momo biết đã nhận
+    data = request.get_json(force=True, silent=True) or {}
+    print("MoMo IPN:", data)
+
+    # Nếu thiếu trường quan trọng
+    required = ["partnerCode", "orderId", "requestId", "amount", "orderInfo", "orderType",
+                "transId", "resultCode", "message", "payType", "responseTime", "extraData", "signature"]
+    if not all(k in data for k in required):
+        return "bad request", 400
+
+    # Tạo raw signature theo tài liệu IPN (thứ tự tham số rất quan trọng)
+    raw_sig = (
+        f"accessKey={accessKey}"
+        f"&amount={data['amount']}"
+        f"&extraData={data.get('extraData', '')}"
+        f"&message={data['message']}"
+        f"&orderId={data['orderId']}"
+        f"&orderInfo={data['orderInfo']}"
+        f"&orderType={data['orderType']}"
+        f"&partnerCode={data['partnerCode']}"
+        f"&payType={data['payType']}"
+        f"&requestId={data['requestId']}"
+        f"&responseTime={data['responseTime']}"
+        f"&resultCode={data['resultCode']}"
+        f"&transId={data['transId']}"
+    )
+    my_sig = hmac.new(secretKey.encode("utf-8"), raw_sig.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    if my_sig != data.get("signature"):
+        print("Sai chữ ký IPN")
+        return "invalid signature", 400
+
+    # Đến đây là IPN hợp lệ → cập nhật đơn hàng trong DB
+    # ví dụ:
+    # order = Order.query.filter_by(code=data['orderId']).first()
+    # if order:
+    #     if str(data['resultCode']) == "0":
+    #         order.status = OrderStatus.PAID
+    #     else:
+    #     order.status = OrderStatus.CANCELLED
+    #     db.session.commit()
+
+    return "ok", 200
+
 
 @app.route('/')
 def home():
@@ -151,6 +320,7 @@ def home():
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop"
     ]
     return render_template("index.html", hero_images=hero_images)
+
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -185,10 +355,12 @@ def search():
                            selected_category_id=category_id,
                            query=keyword)
 
+
 @app.route('/restaurant')
 def restaurant():
     restaurants = Restaurant.query.all()
     return render_template('restaurant.html', restaurants=restaurants)
+
 
 @app.route('/my-restaurant', methods=['GET', 'POST'])
 @login_required
@@ -225,6 +397,7 @@ def my_restaurant():
     # GET: render form
     my_restaurants = Restaurant.query.filter_by(user_id=current_user.id).all()
     return render_template('my_restaurant.html', restaurants=my_restaurants)
+
 
 @app.route('/manage-menu/<int:restaurant_id>', methods=['GET', 'POST'])
 @login_required
@@ -271,7 +444,9 @@ def manage_menu(restaurant_id):
                            menu_items=menu_items,
                            categories=categories)
 
+
 from sqlalchemy.sql import func
+
 
 @app.route('/restaurant/<int:rid>')
 def view_menu(rid):
@@ -279,7 +454,7 @@ def view_menu(rid):
     menu = MenuItem.query.filter_by(restaurant_id=rid).all()
 
     # Tính trung bình sao
-    avg_rating = db.session.query(func.avg(Review.rating))\
+    avg_rating = db.session.query(func.avg(Review.rating)) \
         .filter(Review.restaurant_id == rid).scalar()
     avg_rating = round(avg_rating, 1) if avg_rating else None
 
@@ -293,7 +468,6 @@ def view_menu(rid):
                            menu=menu,
                            has_ordered=has_ordered,
                            average_rating=avg_rating)
-
 
 
 @app.route('/submit-review/<int:restaurant_id>', methods=['POST'])
@@ -326,7 +500,6 @@ def submit_review(restaurant_id):
     return redirect(url_for('view_menu', rid=restaurant_id))
 
 
-
 @app.route('/add-to-cart/<int:menu_id>')
 @login_required
 def add_to_cart(menu_id):
@@ -353,12 +526,14 @@ def add_to_cart(menu_id):
 @login_required
 def view_cart():
     cart = CartItem.query.filter_by(user_id=current_user.id).all()
-    total_price = sum(item.menu_item.price * item.quantity for item in cart)
-    shipping_fee = 15000
+    subtotal, discount, total_price = calculate_total_price(cart)
+
     return render_template('cart.html',
                            cart=cart,
-                           total_price=total_price,
-                           shipping_fee=shipping_fee)
+                           subtotal=subtotal,
+                           discount=discount,
+                           total_price=total_price)
+
 
 @app.route('/cart/update/<int:cart_id>/<change>')
 @login_required
@@ -373,6 +548,7 @@ def update_cart_quantity(cart_id, change):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
+
 @app.route('/cart/remove/<int:cart_id>')
 @login_required
 def remove_from_cart(cart_id):
@@ -382,73 +558,9 @@ def remove_from_cart(cart_id):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
+
 from flask_mail import Message
 
-@app.route('/checkout', methods=['POST'])
-@login_required
-def checkout():
-    cart = CartItem.query.filter_by(user_id=current_user.id).all()
-    if not cart:
-        return redirect(url_for('home'))
-
-    address = request.form.get('address')
-    phone = request.form.get('phone')
-
-    restaurant_id = cart[0].menu_item.restaurant_id
-    order = Order(user_id=current_user.id,
-                  restaurant_id=restaurant_id,
-                  status=OrderStatus.PENDING,
-                  address=address,
-                  phone=phone)
-    db.session.add(order)
-    db.session.commit()
-
-    total = 0
-    content_lines = []
-
-    for item in cart:
-        detail = OrderDetail(
-            order_id=order.id,
-            menu_item_id=item.menu_item.id,
-            quantity=item.quantity,
-            price=item.menu_item.price
-        )
-        db.session.add(detail)
-        item_total = item.quantity * item.menu_item.price
-        total += item_total
-        content_lines.append(f"{item.menu_item.name} x {item.quantity} = {item_total:,} VNĐ")
-
-    order.total = total
-    db.session.commit()
-
-    # Xóa giỏ hàng
-    CartItem.query.filter_by(user_id=current_user.id).delete()
-    db.session.commit()
-
-    # --- Gửi Email thông báo đơn hàng ---
-    try:
-        msg = Message("Xác nhận đơn hàng - foodnow",
-                      sender=app.config['MAIL_USERNAME'],
-                      recipients=[current_user.email])
-        msg.body = f"""Chào {current_user.name},
-
-Bạn đã đặt hàng thành công tại foodnow.
-
-Chi tiết đơn hàng:
-{chr(10).join(content_lines)}
-
-Tổng cộng: {total:,} VNĐ
-Địa chỉ giao hàng: {address}
-Số điện thoại: {phone}
-
-Cảm ơn bạn đã sử dụng dịch vụ!
-        """
-        mail.send(msg)
-    except Exception as e:
-        print("Không gửi được mail:", str(e))
-    flash("Đơn hàng đã được đặt thành công. Vui lòng kiểm tra email để xem chi tiết đơn hàng.", "success")
-
-    return redirect(url_for('home'))
 
 @app.route('/order/<int:order_id>')
 @login_required
@@ -457,6 +569,7 @@ def view_order_detail(order_id):
     if not order:
         return "Không tìm thấy đơn hàng.", 404
     return render_template('order_detail.html', order=order)
+
 
 @app.route('/my-orders')
 @login_required
@@ -470,9 +583,10 @@ def my_orders():
 
     # Lấy đơn hàng thuộc các nhà hàng đó
     orders = Order.query.filter(Order.restaurant_id.in_(restaurant_ids)) \
-                        .order_by(Order.created_at.desc()).all()
+        .order_by(Order.created_at.desc()).all()
 
     return render_template('restaurant_orders.html', orders=orders)
+
 
 @app.route('/update-order-status/<int:order_id>', methods=['POST'])
 @login_required
@@ -503,8 +617,6 @@ def update_order_status(order_id):
     return redirect(url_for('my_orders'))
 
 
-
-
 @app.template_filter('vntime')
 def vntime(utc_dt, fmt='%d/%m/%Y %H:%M'):
     if not utc_dt:
@@ -532,6 +644,7 @@ def login_process():
 
     return render_template('login.html')
 
+
 @app.route('/login-admin', methods=['post'])
 def login_admin_process():
     username = request.form.get('username')
@@ -542,10 +655,12 @@ def login_admin_process():
 
     return redirect('/admin')
 
+
 @app.route('/logout')
 def logout_process():
     logout_user()
     return redirect(url_for('home'))
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_process():
@@ -587,9 +702,11 @@ def register_process():
 
     return render_template('register.html', err_msg=error_msg)
 
+
 @login.user_loader
 def load_user(user_id):
     return utils.get_user_by_id(user_id)
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -660,6 +777,7 @@ def edit_menu_item(item_id):
 
     return render_template('edit_menu_item.html', item=item, categories=categories)
 
+
 @app.route('/edit_restaurant/<int:restaurant_id>', methods=['GET', 'POST'])
 def edit_restaurant(restaurant_id):
     restaurant = Restaurant.query.get_or_404(restaurant_id)
@@ -685,6 +803,7 @@ def edit_restaurant(restaurant_id):
 
     return render_template('edit_restaurant.html', restaurant=restaurant)
 
+
 @app.route('/menu_item/delete/<int:item_id>', methods=['POST'])
 @login_required
 def delete_menu_item(item_id):
@@ -694,6 +813,7 @@ def delete_menu_item(item_id):
     db.session.commit()
     return redirect(url_for('manage_menu', restaurant_id=restaurant_id))
 
+
 @app.route('/delete_restaurant/<int:restaurant_id>', methods=['POST'])
 def delete_restaurant(restaurant_id):
     restaurant = Restaurant.query.get_or_404(restaurant_id)
@@ -702,9 +822,11 @@ def delete_restaurant(restaurant_id):
     flash('Xóa nhà hàng thành công.', 'success')
     return redirect(url_for('my_restaurant'))
 
+
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
+
 
 @app.context_processor
 def inject_cart_count():
@@ -713,7 +835,9 @@ def inject_cart_count():
         count = CartItem.query.filter_by(user_id=current_user.id).count()
     return dict(cart_count=count)
 
+
 if __name__ == '__main__':
     with app.app_context():
         from foodnow import admin
+
         app.run(debug=True, host="0.0.0.0", port=80)
