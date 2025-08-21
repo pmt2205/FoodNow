@@ -58,14 +58,14 @@
 
                 <!-- Hiển thị flash message -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    {% for category, message in messages %}
-                      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
-                    {% endfor %}
-                  {% endif %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
                 {% endwith %}
 
                 <!-- Form áp dụng mã giảm giá -->
@@ -91,13 +91,20 @@
                     <div class="mb-3">
                         <label class="form-label">Phương thức thanh toán</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
+                            <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod"
+                                   checked>
                             <label class="form-check-label" for="cod">Thanh toán khi nhận (COD)</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="payment_method" value="momo" id="momo">
                             <label class="form-check-label" for="momo">Thanh toán MoMo</label>
                         </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" value="zalopay"
+                                   id="zalopay">
+                            <label class="form-check-label" for="zalopay">Thanh toán ZaloPay</label>
+                        </div>
+
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">

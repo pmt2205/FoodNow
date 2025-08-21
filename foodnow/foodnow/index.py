@@ -42,7 +42,6 @@ login_manager = LoginManager(app)
 def load_user(user_id):
     return User.query.get(int(user_id))  # hoặc get_user_by_id(user_id)
 
-
 @app.route('/google')
 def google_login():
     if not google.authorized:
@@ -77,6 +76,160 @@ def google_login():
     login_user(user)
     return redirect(url_for('home'))
 
+# ===== ZALOPAY (SANDBOX) CONFIG =====
+ZALO_APP_ID = 2554                     # ví dụ app id test; thay bằng app_id sandbox của bạn
+ZALO_KEY1  = "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn"       # key1 dùng để ký create order (MAC)
+ZALO_KEY2  = "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf"       # key2 dùng để verify callback (IPN)
+ZALO_CREATE_ORDER_URL = "https://sb-openapi.zalopay.vn/v2/create"  # endpoint sandbox
+
+import json, time
+
+def make_app_trans_id(order_id: int) -> str:
+    return datetime.now().strftime("%y%m%d") + "_" + str(order_id)
+
+@app.route("/create_zalopay_payment/<int:order_id>")
+@login_required
+def create_zalopay_payment(order_id):
+    order = Order.query.get_or_404(order_id)
+
+    # 1) Build params theo spec Gateway
+    app_id = ZALO_APP_ID
+    app_user = str(current_user.id)               # tuỳ bạn, miễn cố định định danh user
+    app_time = int(time.time() * 1000)            # milliseconds
+    app_trans_id = make_app_trans_id(order.id)    # YYMMDD_orderId
+    amount = int(order.total)
+
+    # ZP sẽ redirect về redirecturl trong embed_data sau khi thanh toán
+    redirect_url = url_for("payment_return_zalopay", order_id=order.id, _external=True)
+    callback_url = url_for("zalopay_ipn", _external=True)
+
+    embed_data = json.dumps({
+        "redirecturl": redirect_url,
+        # bạn có thể nhét thêm thông tin nhẹ tại đây nếu muốn
+    }, ensure_ascii=False)
+
+    # item: danh sách món (chuỗi JSON). Có thể tối giản []
+    order_items = []
+    for d in OrderDetail.query.filter_by(order_id=order.id).all():
+        order_items.append({
+            "itemid": d.menu_item_id,
+            "itemname": d.menu_item.name,
+            "itemprice": int(d.price),
+            "itemquantity": int(d.quantity)
+        })
+    item = json.dumps(order_items, ensure_ascii=False)
+
+    description = f"FoodNow - Order #{order.id}"
+
+    # 2) Tính MAC bằng key1: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
+    data_mac = f"{app_id}|{app_trans_id}|{app_user}|{amount}|{app_time}|{embed_data}|{item}"
+    mac = hmac.new(ZALO_KEY1.encode("utf-8"), data_mac.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    payload = {
+        "app_id": app_id,
+        "app_user": app_user,
+        "app_time": app_time,
+        "amount": amount,
+        "app_trans_id": app_trans_id,
+        "embed_data": embed_data,
+        "item": item,
+        "description": description,
+        "bank_code": "",           # để trống: cho user chọn trên Gateway
+        "callback_url": callback_url,
+        "mac": mac
+    }
+
+    # 3) Gọi API create order
+    try:
+        res = requests.post(ZALO_CREATE_ORDER_URL, json=payload, timeout=30).json()
+    except Exception as e:
+        return f"Lỗi gọi ZaloPay: {e}", 500
+
+    # 4) Nếu OK, redirect sang Gateway (order_url)
+    #    Thông thường response có: return_code, order_url, zp_trans_token...
+    if res.get("return_code") == 1 and "order_url" in res:
+        return redirect(res["order_url"])
+
+    # Trường hợp lỗi -> hiển thị trả về để debug
+    return f"Lỗi ZaloPay: {res}", 400
+
+@app.route("/payment-return/zalopay")
+@login_required
+def payment_return_zalopay():
+    order_id = request.args.get("order_id", type=int)
+    if not order_id:
+        flash("Thiếu thông tin đơn hàng.", "danger")
+        return redirect(url_for("home"))
+
+    order = Order.query.get(order_id)
+    if not order:
+        flash("Không tìm thấy đơn hàng.", "danger")
+        return redirect(url_for("home"))
+
+    # Chỉ gửi mail nếu đơn đã được IPN xác nhận thanh toán thành công
+    if order.status == OrderStatus.PENDING:
+        try:
+            send_order_email(order, order.user)
+            flash("Thanh toán thành công! Email xác nhận đã gửi.", "success")
+        except Exception as e:
+            print("Không gửi được mail:", str(e))
+            flash("Thanh toán thành công! Nhưng chưa gửi được email.", "warning")
+    else:
+        flash("Thanh toán chưa hoàn tất. Vui lòng chờ hệ thống xác nhận.", "info")
+
+    return redirect(url_for("view_order_detail", order_id=order.id))
+
+
+
+@app.route("/zalopay_ipn", methods=["POST"])
+def zalopay_ipn():
+    try:
+        body = request.get_json(force=True, silent=True) or {}
+        data_str = body.get("data", "")
+        req_mac = body.get("mac", "")
+
+        # Verify mac bằng key2
+        mac_calc = hmac.new(ZALO_KEY2.encode("utf-8"), data_str.encode("utf-8"), hashlib.sha256).hexdigest()
+        if mac_calc != req_mac:
+            # Sai MAC
+            return jsonify({"return_code": -1, "return_message": "invalid mac"}), 400
+
+        data = json.loads(data_str)
+
+        # data thường có: app_trans_id, zp_trans_id, amount, server_time, paid_at, status...
+        app_trans_id = data.get("app_trans_id", "")
+        # Tách order_id từ app_trans_id kiểu YYMMDD_orderId
+        try:
+            order_id = int(app_trans_id.split("_", 1)[1])
+        except Exception:
+            order_id = None
+
+        if not order_id:
+            return jsonify({"return_code": -1, "return_message": "invalid order"}), 400
+
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({"return_code": -1, "return_message": "order not found"}), 404
+
+        # Tuỳ chính sách: nếu IPN báo thành công (ZP đã thu tiền), đánh dấu đã thanh toán
+        # Một số tích hợp dùng status==1, một số chỉ cần IPN đến là thành công.
+        # Ở sandbox phổ biến là coi IPN thành công => PAID
+        order.status = OrderStatus.PAID
+        db.session.commit()
+
+        # Gửi mail xác nhận nếu muốn (chưa gửi trước đó)
+        try:
+            send_order_email(order, order.user)
+        except Exception as e:
+            print("send mail error:", e)
+
+        # Phải trả về return_code=1 để ZaloPay biết bạn đã xử lý xong
+        return jsonify({"return_code": 1, "return_message": "OK"}), 200
+
+    except Exception as e:
+        print("ZaloPay IPN error:", e)
+        return jsonify({"return_code": 0, "return_message": "server error"}), 500
+
 
 def send_order_email(order, user):
     try:
@@ -109,7 +262,6 @@ Cảm ơn bạn đã sử dụng dịch vụ!
         mail.send(msg)
     except Exception as e:
         print("Không gửi được mail:", str(e))
-
 
 @app.route("/checkout", methods=["POST"])
 @login_required
@@ -177,10 +329,17 @@ def checkout():
         send_order_email(order, current_user)
         flash("Đơn hàng đã được đặt thành công.", "success")
         return redirect(url_for("view_order_detail", order_id=order.id))
+
     elif payment_method == "momo":
         return redirect(url_for("create_momo_payment", order_id=order.id))
+
+    elif payment_method == "zalopay":
+        return redirect(url_for("create_zalopay_payment", order_id=order.id))
+
     else:
+        flash("Phương thức thanh toán không hợp lệ", "danger")
         return redirect(url_for("view_cart"))
+
 
 @app.route("/apply_coupon", methods=["POST"])
 @login_required
@@ -234,7 +393,7 @@ def create_momo_payment(order_id):
 
     redirectUrl = url_for("payment_return", _external=True)
     ipnUrl = url_for("momo_ipn", _external=True)
-    extraData = str(order.id)  # để khi return biết order nào
+    extraData = str(order.id)
     requestType = "captureWallet"
 
     raw_signature = (
