@@ -45,11 +45,28 @@
                 </a>
                 <a href="#" id="notification-icon" class="nav-link position-relative me-3">
                     <i class="fas fa-bell fs-4"></i>
-                    <span id="notification-badge"
-                          class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle d-none">
-                        <span class="visually-hidden">New alerts</span>
-                    </span>
+                    {% if unread_count > 0 %}
+                    <span id="notification-badge" class="badge-notify">{{ unread_count }}</span>
+                    {% endif %}
                 </a>
+
+                <div id="notification-popup" class="shadow p-3 bg-white">
+                    <ul class="list-unstyled mb-0">
+                        {% for note in notifications %}
+                        <li class="py-1 border-bottom">
+                            {% if note.order_id %}
+                            <a href="{{ url_for('view_order_detail', order_id=note.order_id) }}"
+                               class="notification-link" data-id="{{ note.id }}">
+                                {{ note.message }}
+                            </a>
+                            {% else %}
+                            {{ note.message }}
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
 
                 {% if current_user.is_authenticated %}
                 <div class="dropdown">
@@ -77,3 +94,36 @@
         </div>
     </nav>
 </header>
+<script>
+    const icon = document.getElementById("notification-icon");
+    const popup = document.getElementById("notification-popup");
+    const badge = document.getElementById("notification-badge");
+
+    icon.addEventListener("click", function (e) {
+        e.preventDefault();
+        popup.style.display = popup.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", function (e) {
+        if (!popup.contains(e.target) && !icon.contains(e.target)) {
+            popup.style.display = "none";
+        }
+    });
+
+    // Khi click vào link thông báo, đánh dấu đã đọc và giảm badge
+    document.querySelectorAll(".notification-link").forEach(link => {
+        link.addEventListener("click", function () {
+            const id = this.dataset.id;
+            fetch(`/notification/mark_read/${id}`, {method: "POST"}).then(() => {
+                let count = parseInt(badge.textContent);
+                count = count - 1;
+                if (count <= 0) {
+                    badge.style.display = "none";
+                } else {
+                    badge.textContent = count;
+                }
+            });
+        });
+    });
+
+</script>

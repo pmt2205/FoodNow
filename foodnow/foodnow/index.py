@@ -8,10 +8,10 @@ from foodnow.admin import CouponAdmin
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from foodnow import app, db, login
-from flask import render_template, request, redirect, url_for, session, flash, Flask
+from flask import render_template, request, redirect, url_for, session, flash, Flask, jsonify
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, \
-    Review,Coupon
+    Review,Coupon,Notification,UserCoupon
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 from flask_dance.contrib.google import make_google_blueprint, google
@@ -123,11 +123,9 @@ def checkout():
     phone = request.form.get("phone")
     payment_method = request.form.get("payment_method")
 
-    # Lấy mã giảm giá từ session nếu có
     coupon_code = session.get("applied_coupon")
-    subtotal, discount, total_price = utils.calculate_total_price(cart, coupon_code)
+    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id, coupon_code)
 
-    # Tạo Order
     restaurant_id = cart[0].menu_item.restaurant_id
     order = Order(
         user_id=current_user.id,
@@ -141,7 +139,6 @@ def checkout():
     db.session.add(order)
     db.session.commit()
 
-    # Thêm chi tiết Order
     for item in cart:
         detail = OrderDetail(
             order_id=order.id,
@@ -153,12 +150,29 @@ def checkout():
 
     # Xóa giỏ hàng
     CartItem.query.filter_by(user_id=current_user.id).delete()
+
+    # Đánh dấu coupon đã dùng
+    if coupon_code:
+        coupon = Coupon.query.filter_by(code=coupon_code.strip().upper()).first()
+        if coupon:
+            used = UserCoupon.query.filter_by(user_id=current_user.id, coupon_id=coupon.id).first()
+            if not used:
+                user_coupon = UserCoupon(user_id=current_user.id, coupon_id=coupon.id)
+                db.session.add(user_coupon)
+                coupon.used_count += 1
+
+    # Thêm thông báo
+    notification = Notification(
+        user_id=current_user.id,
+        message=f"Đơn hàng #{order.id} của bạn đã được đặt thành công!",
+        order_id=order.id
+    )
+    db.session.add(notification)
     db.session.commit()
 
-    # Xóa session mã giảm giá sau checkout
     session.pop("applied_coupon", None)
+    db.session.commit()
 
-    # Thanh toán
     if payment_method == "cod":
         send_order_email(order, current_user)
         flash("Đơn hàng đã được đặt thành công.", "success")
@@ -167,7 +181,6 @@ def checkout():
         return redirect(url_for("create_momo_payment", order_id=order.id))
     else:
         return redirect(url_for("view_cart"))
-
 
 @app.route("/apply_coupon", methods=["POST"])
 @login_required
@@ -183,29 +196,26 @@ def apply_coupon():
         flash("Vui lòng nhập mã giảm giá!", "warning")
         return redirect(url_for("view_cart"))
 
-    # Tìm coupon
     coupon = Coupon.query.filter_by(code=code).first()
     if not coupon:
         flash("Mã giảm giá không tồn tại!", "danger")
         return redirect(url_for("view_cart"))
 
-    # Tính subtotal
-    subtotal = sum(item.menu_item.price * item.quantity for item in cart)
-
-    # Kiểm tra điều kiện
-    if coupon.used_count >= coupon.max_usage:
-        flash("Mã giảm giá đã hết lượt sử dụng!", "warning")
+    # Kiểm tra user đã dùng coupon này chưa
+    used = UserCoupon.query.filter_by(user_id=current_user.id, coupon_id=coupon.id).first()
+    if used:
+        flash("Bạn đã sử dụng mã này rồi!", "warning")
         return redirect(url_for("view_cart"))
+
+    subtotal = sum(item.menu_item.price * item.quantity for item in cart)
 
     if subtotal < coupon.min_order_value:
         flash(f"Đơn hàng phải tối thiểu {coupon.min_order_value} VNĐ mới được áp dụng mã!", "warning")
         return redirect(url_for("view_cart"))
 
-    # Lưu mã vào session
     session["applied_coupon"] = coupon.code
     flash(f"Áp dụng mã {coupon.code} thành công! Bạn được giảm {coupon.discount_percent}%!", "success")
     return redirect(url_for("view_cart"))
-
 
 @app.route("/create_momo_payment/<int:order_id>")
 @login_required
@@ -332,6 +342,17 @@ def momo_ipn():
 
     return "ok", 200
 
+@app.context_processor
+def inject_notifications():
+    if current_user.is_authenticated:
+        notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).all()
+        unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    else:
+        notifications = []
+        unread_count = 0
+    return dict(notifications=notifications, unread_count=unread_count)
+
+
 
 @app.route('/')
 def home():
@@ -340,7 +361,21 @@ def home():
         "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=2070&auto=format&fit=crop",
         "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070&auto=format&fit=crop"
     ]
-    return render_template("index.html", hero_images=hero_images)
+
+    # Lấy thông báo chưa đọc của user hiện tại
+    if current_user.is_authenticated:
+        notifications = Notification.query.filter_by(user_id=current_user.id, is_read=False).order_by(
+            Notification.created_at.desc()).all()
+        unread_count = len(notifications)
+    else:
+        notifications = []
+        unread_count = 0
+
+    return render_template("index.html",
+                           hero_images=hero_images,
+                           notifications=notifications,
+                           unread_count=unread_count)
+
 
 
 @app.route('/search', methods=['GET'])
@@ -549,13 +584,14 @@ def view_cart():
     cart = CartItem.query.filter_by(user_id=current_user.id).all()
     coupon_code = session.get("applied_coupon")  # lấy coupon từ session nếu có
 
-    subtotal, discount, total_price = utils.calculate_total_price(cart, coupon_code)
+    subtotal, discount, total_price = utils.calculate_total_price(cart,current_user.id,coupon_code)
 
     return render_template('cart.html',
                            cart=cart,
                            subtotal=subtotal,
                            discount=discount,
-                           total_price=total_price)
+                           total_price=total_price,
+                           apply_coupon=coupon_code)
 
 
 @app.route('/cart/update/<int:cart_id>/<change>')
@@ -588,10 +624,25 @@ from flask_mail import Message
 @app.route('/order/<int:order_id>')
 @login_required
 def view_order_detail(order_id):
-    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first()
-    if not order:
-        return "Không tìm thấy đơn hàng.", 404
+    order = Order.query.get_or_404(order_id)
+
+    if order.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        flash("Bạn không có quyền xem đơn hàng này", "danger")
+        return redirect(url_for("home"))
+
     return render_template('order_detail.html', order=order)
+
+@app.route('/notification/mark_read/<int:notification_id>', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    note = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first()
+    if note:
+        note.is_read = True
+        db.session.commit()
+        return '', 204
+    return 'Not found', 404
+
+
 
 
 @app.route('/my-orders')

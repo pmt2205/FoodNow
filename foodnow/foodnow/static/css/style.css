@@ -106,3 +106,62 @@ body {
     .rating label:hover ~ label {
         color: gold;
     }
+
+     /* Icon chuông */
+  .nav-link {
+    cursor: pointer;
+  }
+
+/* Badge nổi trên góc icon */
+.badge-notify {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+    background: lightblue; /* hoặc bg-danger */
+    color: white;
+    border-radius: 50%;
+    padding: 4px 7px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Popup thông báo */
+#notification-popup {
+    display: none;
+    position: absolute;
+    top: 50px; /* cách icon */
+    right: 0;
+    width: 300px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+#notification-popup ul {
+    list-style: none;
+    padding: 10px;
+    margin: 0;
+}
+
+#notification-popup li {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    border-radius: 8px;       /* bo góc cho từng thông báo */
+    margin-bottom: 5px;       /* khoảng cách giữa các ngăn */
+    background: #f9f9f9;      /* màu nền từng thông báo */
+}
+
+#notification-popup li:last-child {
+    border-bottom: none;
+}
+
+#notification-popup li a {
+    color: #000;
+    text-decoration: none;
+}
+#notification-popup li a:hover {
+    text-decoration: underline;
+}

@@ -185,6 +185,31 @@ class Coupon(db.Model):
     def __str__(self):
         return f"{self.code} ({self.discount_percent}%)"
 
+class Notification(BaseModel):
+    __tablename__ = 'notification'
+    message = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=True)  # thông báo cho ai, null = tất cả
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.now)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=True)
+
+    order = relationship('Order', backref='notifications')
+    user = relationship('User', backref='notifications')
+
+    def __str__(self):
+        return self.message
+class UserCoupon(db.Model):
+    __tablename__ = 'user_coupon'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    coupon_id = db.Column(db.Integer, db.ForeignKey('coupon.id'), nullable=False)
+    used_at = db.Column(db.DateTime, default=datetime.now)
+
+    user = db.relationship('User', backref='used_coupons')
+    coupon = db.relationship('Coupon', backref='used_by_users')
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'coupon_id', name='uix_user_coupon'),)
+
 
 if __name__ == '__main__':
     with app.app_context():
