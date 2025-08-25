@@ -11,7 +11,7 @@
             </div>
             <div class="col-md-6 mb-3">
                 <p class="mb-1 fw-semibold text-muted">Trạng thái</p>
-                <span class="badge bg-secondary">
+                <span class="badge {% if order.status.value == 'Hoàn tất' %}bg-success{% else %}bg-secondary{% endif %}">
                     {{ order.status.value }}
                 </span>
             </div>
@@ -31,13 +31,13 @@
             {% for item in order.details %}
             <div class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="me-auto">
-                    <div class="fw-bold">{{ item.menu_item.name }}</div>
+                    <div class="fw-bold">{{ item.menu_item.name if item.menu_item else "Món đã xóa" }}</div>
                     <div class="text-muted small">Số lượng: {{ item.quantity }}</div>
                 </div>
                 <div class="text-end">
                     <div>Đơn giá: {{ '{:,.0f} đ'.format(item.price) }}</div>
-                    <div>Thành tiền: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity ) }}</strong></div>
-                    <div>Giảm giá: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity - order.total ) }}</strong></div>
+                    <div>Giảm giá: <strong>{{ '{:,.0f} đ'.format(item.discount) }}</strong></div>
+                    <div>Thành tiền: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity - item.discount) }}</strong></div>
                 </div>
             </div>
             {% endfor %}

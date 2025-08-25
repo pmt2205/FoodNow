@@ -266,7 +266,20 @@ Cảm ơn bạn đã sử dụng dịch vụ!
 @app.route("/checkout", methods=["POST"])
 @login_required
 def checkout():
-    cart = CartItem.query.filter_by(user_id=current_user.id).all()
+    selected_items = request.form.getlist("selected_items")
+    if not selected_items:
+        flash("Vui lòng chọn ít nhất một món để thanh toán!", "danger")
+        return redirect(url_for("view_cart"))
+
+    selected_ids = []
+    for item in selected_items:
+        selected_ids.extend([int(x) for x in item.split(',') if x.strip().isdigit()])
+
+    cart = CartItem.query.filter(
+        CartItem.user_id == current_user.id,
+        CartItem.id.in_(selected_ids)
+    ).all()
+
     if not cart:
         flash("Giỏ hàng trống!", "danger")
         return redirect(url_for("view_cart"))
@@ -275,9 +288,27 @@ def checkout():
     phone = request.form.get("phone")
     payment_method = request.form.get("payment_method")
 
+    # Lấy coupon từ session
     coupon_code = session.get("applied_coupon")
-    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id, coupon_code)
+    coupon = None
+    if coupon_code:
+        coupon = Coupon.query.filter_by(code=coupon_code.strip().upper()).first()
+        if coupon:
+            used = UserCoupon.query.filter_by(user_id=current_user.id, coupon_id=coupon.id).first()
+            subtotal_temp = sum(item.menu_item.price * item.quantity for item in cart)
+            if used or not coupon.is_valid(subtotal=subtotal_temp):
+                coupon = None
+                coupon_code = None
 
+    # Tính tổng tiền và gán discount cho từng item
+    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id, coupon_code)
+    for item in cart:
+        item_discount = 0
+        if discount > 0:
+            item_discount = (item.menu_item.price * item.quantity / subtotal) * discount
+        item.discount = item_discount
+
+    # Tạo đơn hàng
     restaurant_id = cart[0].menu_item.restaurant_id
     order = Order(
         user_id=current_user.id,
@@ -291,27 +322,28 @@ def checkout():
     db.session.add(order)
     db.session.commit()
 
+    # Lưu chi tiết đơn hàng
     for item in cart:
         detail = OrderDetail(
             order_id=order.id,
             menu_item_id=item.menu_item.id,
             quantity=item.quantity,
-            price=item.menu_item.price
+            price=item.menu_item.price,
+            discount=getattr(item, 'discount', 0)
         )
         db.session.add(detail)
 
-    # Xóa giỏ hàng
-    CartItem.query.filter_by(user_id=current_user.id).delete()
+    # Xóa món đã chọn khỏi giỏ
+    CartItem.query.filter(
+        CartItem.user_id == current_user.id,
+        CartItem.id.in_(selected_ids)
+    ).delete(synchronize_session=False)
 
     # Đánh dấu coupon đã dùng
-    if coupon_code:
-        coupon = Coupon.query.filter_by(code=coupon_code.strip().upper()).first()
-        if coupon:
-            used = UserCoupon.query.filter_by(user_id=current_user.id, coupon_id=coupon.id).first()
-            if not used:
-                user_coupon = UserCoupon(user_id=current_user.id, coupon_id=coupon.id)
-                db.session.add(user_coupon)
-                coupon.used_count += 1
+    if coupon_code and coupon:
+        user_coupon = UserCoupon(user_id=current_user.id, coupon_id=coupon.id)
+        db.session.add(user_coupon)
+        coupon.used_count += 1
 
     # Thêm thông báo
     notification = Notification(
@@ -320,26 +352,25 @@ def checkout():
         order_id=order.id
     )
     db.session.add(notification)
-    db.session.commit()
 
+    # Xóa session coupon
     session.pop("applied_coupon", None)
+    session.pop("discount_code", None)
+
     db.session.commit()
 
+    # Thanh toán
     if payment_method == "cod":
         send_order_email(order, current_user)
         flash("Đơn hàng đã được đặt thành công.", "success")
         return redirect(url_for("view_order_detail", order_id=order.id))
-
     elif payment_method == "momo":
         return redirect(url_for("create_momo_payment", order_id=order.id))
-
     elif payment_method == "zalopay":
         return redirect(url_for("create_zalopay_payment", order_id=order.id))
-
     else:
         flash("Phương thức thanh toán không hợp lệ", "danger")
         return redirect(url_for("view_cart"))
-
 
 @app.route("/apply_coupon", methods=["POST"])
 @login_required
@@ -372,8 +403,16 @@ def apply_coupon():
         flash(f"Đơn hàng phải tối thiểu {coupon.min_order_value} VNĐ mới được áp dụng mã!", "warning")
         return redirect(url_for("view_cart"))
 
+    # Lưu coupon vào session
     session["applied_coupon"] = coupon.code
-    flash(f"Áp dụng mã {coupon.code} thành công! Bạn được giảm {coupon.discount_percent}%!", "success")
+
+    # Tính giảm giá tạm thời cho từng item để hiển thị ngay
+    total_discount = subtotal * (coupon.discount_percent / 100)
+    discount_per_item = total_discount / len(cart)
+    for item in cart:
+        item.discount = discount_per_item  # chỉ tạm thời, không lưu DB
+
+    flash(f"Áp dụng mã {coupon.code} thành công! Giảm {coupon.discount_percent}%!", "success")
     return redirect(url_for("view_cart"))
 
 @app.route("/create_momo_payment/<int:order_id>")
@@ -775,6 +814,7 @@ def remove_from_cart(cart_id):
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('view_cart'))
+
 
 
 from flask_mail import Message

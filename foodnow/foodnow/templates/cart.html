@@ -14,20 +14,24 @@
                 {% for item in cart %}
                 <div class="card card-body">
                     <div class="row align-items-center">
-                        <div class="col-md-5 d-flex align-items-center">
+                        <div class="col-md-1 d-flex justify-content-center">
+                            <input type="checkbox" class="item-checkbox" name="selected_items"
+                                   value="{{ item.id }}"
+                                   data-price="{{ item.menu_item.price * item.quantity }}"
+                                   data-discount="{{ item.discount | default(0) }}"
+                                   checked>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-center">
                             <img src="{{ item.menu_item.image }}"
                                  onerror="this.onerror=null;this.src='https://placehold.co/80x80/cccccc/ffffff?text=N/A';"
-                                 class="rounded me-3"
-                                 style="width: 80px; height: 80px; object-fit: cover;">
+                                 class="rounded me-3" style="width: 80px; height: 80px; object-fit: cover;">
                             <div>
                                 <h5 class="fw-bold mb-1">{{ item.menu_item.name }}</h5>
                                 {% if item.note %}
                                 <p class="text-muted small mb-1">Ghi chú: {{ item.note }}</p>
                                 {% endif %}
                                 {% if item.extras %}
-                                <p class="text-primary small mb-0">
-                                    {{ item.extras|join(', ') }}
-                                </p>
+                                <p class="text-primary small mb-0">{{ item.extras|join(', ') }}</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -40,7 +44,7 @@
                                    class="btn btn-outline-secondary">+</a>
                             </div>
                             <span class="fw-bold me-3" style="width: 100px;">
-                                {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity) }}
+                                {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity - item.discount | default(0)) }}
                             </span>
                             <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}"
                                class="btn btn-outline-danger"><i class="fas fa-trash-alt"></i></a>
@@ -56,7 +60,6 @@
             <div class="card card-body shadow-sm">
                 <h3 class="fw-bold mb-3">Thông tin đơn hàng</h3>
 
-                <!-- Hiển thị flash message -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                 {% for category, message in messages %}
@@ -68,31 +71,29 @@
                 {% endif %}
                 {% endwith %}
 
-                <!-- Form áp dụng mã giảm giá -->
                 <form action="{{ url_for('apply_coupon') }}" method="POST" class="mb-3 d-flex">
                     <input type="text" name="coupon" class="form-control me-2" placeholder="Nhập mã giảm giá" required>
                     <button type="submit" class="btn btn-primary">Áp dụng</button>
                 </form>
 
-                <!-- Form checkout -->
                 <form id="checkout-form" method="POST" action="{{ url_for('checkout') }}">
+                    <input type="hidden" name="selected_items" id="selected-items-input">
+
                     <div class="mb-3">
                         <label class="form-label">Địa chỉ nhận hàng</label>
                         <input type="text" name="address" class="form-control" required
-                               value="{{ current_user.address if current_user.address else '' }}">
+                               value="{{ current_user.address or '' }}">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Số điện thoại</label>
                         <input type="tel" name="phone" class="form-control" required
-                               value="{{ current_user.phone if current_user.phone else '' }}">
+                               value="{{ current_user.phone or '' }}">
                     </div>
 
-                    <!-- chọn phương thức thanh toán -->
                     <div class="mb-3">
                         <label class="form-label">Phương thức thanh toán</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod"
-                                   checked>
+                            <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
                             <label class="form-check-label" for="cod">Thanh toán khi nhận (COD)</label>
                         </div>
                         <div class="form-check">
@@ -100,33 +101,27 @@
                             <label class="form-check-label" for="momo">Thanh toán MoMo</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" value="zalopay"
-                                   id="zalopay">
+                            <input class="form-check-input" type="radio" name="payment_method" value="zalopay" id="zalopay">
                             <label class="form-check-label" for="zalopay">Thanh toán ZaloPay</label>
                         </div>
-
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tạm tính</span>
-                        <span>{{ '{:,.0f} đ'.format(subtotal) }}</span>
+                        <span id="subtotal">0 đ</span>
                     </div>
-                    {% if discount and discount > 0 %}
                     <div class="d-flex justify-content-between text-success mb-2">
                         <span>Giảm giá</span>
-                        <span>- {{ '{:,.0f} đ'.format(discount) }}</span>
+                        <span id="discount">0 đ</span>
                     </div>
-                    {% endif %}
                     <hr>
                     <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
                         <span>Tổng cộng</span>
-                        <span>{{ '{:,.0f} đ'.format(subtotal - discount if discount else subtotal) }}</span>
+                        <span id="grand-total">0 đ</span>
                     </div>
 
-                    <!-- Nút mở modal xác nhận -->
                     <div class="d-grid mt-2">
-                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal"
-                                data-bs-target="#confirmModal">
+                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmModal">
                             Thanh toán
                         </button>
                     </div>
@@ -136,7 +131,6 @@
     </div>
 </div>
 
-<!-- Modal xác nhận đặt hàng -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -154,5 +148,41 @@
         </div>
     </div>
 </div>
+
+<script>
+function updateTotal() {
+    let subtotal = 0;
+    let discount = 0;
+
+    document.querySelectorAll(".item-checkbox:checked").forEach(cb => {
+        subtotal += parseInt(cb.dataset.price);
+        discount += parseInt(cb.dataset.discount || 0);
+    });
+
+    document.getElementById("subtotal").innerText = subtotal.toLocaleString() + " đ";
+    document.getElementById("discount").innerText = "- " + discount.toLocaleString() + " đ";
+
+    let total = subtotal - discount;
+    if (total < 0) total = 0;
+    document.getElementById("grand-total").innerText = total.toLocaleString() + " đ";
+}
+
+// Lần đầu load
+updateTotal();
+
+// Khi tick chọn món
+document.querySelectorAll(".item-checkbox").forEach(cb => {
+    cb.addEventListener("change", updateTotal);
+});
+
+// Submit form => lưu selected_items
+document.getElementById("checkout-form").addEventListener("submit", function() {
+    let selected = [];
+    document.querySelectorAll(".item-checkbox:checked").forEach(cb => {
+        selected.push(cb.value);
+    });
+    document.getElementById("selected-items-input").value = selected.join(",");
+});
+</script>
 
 {% endblock %}

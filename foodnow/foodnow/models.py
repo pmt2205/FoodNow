@@ -133,14 +133,19 @@ class Order(db.Model):
 # Chi tiết đơn hàng
 class OrderDetail(BaseModel):
     __tablename__ = 'order_detail'
+
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)  # Đơn giá tại thời điểm đặt
+    discount = Column(Float, default=0.0)  # Giảm giá cho món này
 
     order_id = Column(Integer, ForeignKey('order.id'), nullable=False)
     menu_item_id = Column(Integer, ForeignKey('menu_item.id', ondelete='SET NULL'), nullable=True)
 
     def __str__(self):
-        return f"{self.quantity} x {self.menu_item.name} = {self.price * self.quantity}"
+        item_name = self.menu_item.name if self.menu_item else "Món đã xóa"
+        total = self.price * self.quantity - self.discount
+        return f"{self.quantity} x {item_name} = {total}"
+
 
 # Bình luận / Đánh giá
 class Review(BaseModel):

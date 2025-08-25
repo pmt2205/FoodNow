@@ -146,7 +146,6 @@ def save_order(user_id, restaurant_id):
     return True
 
 
-
 def calculate_total_price(cart, user_id, coupon_code=None):
     subtotal = sum(item.menu_item.price * item.quantity for item in cart)
     discount = 0
@@ -154,15 +153,22 @@ def calculate_total_price(cart, user_id, coupon_code=None):
     if coupon_code:
         coupon = Coupon.query.filter_by(code=coupon_code.strip().upper()).first()
         if coupon:
-            # Kiểm tra user đã dùng chưa
             used = UserCoupon.query.filter_by(user_id=user_id, coupon_id=coupon.id).first()
             if not used and coupon.is_valid(subtotal=subtotal):
                 discount = subtotal * (coupon.discount_percent / 100)
-            else:
-                discount = 0
 
     total = subtotal - discount
+
+    # Gán discount tạm cho từng item để hiển thị
+    if discount > 0 and subtotal > 0:
+        for item in cart:
+            item.discount = (item.menu_item.price * item.quantity / subtotal) * discount
+    else:
+        for item in cart:
+            item.discount = 0
+
     return subtotal, discount, total
+
 
 
 
