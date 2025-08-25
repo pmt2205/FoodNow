@@ -109,6 +109,7 @@ class CartItem(BaseModel):
 
 
 class OrderStatus(StatusEnum):
+    WAITTING = 'Chờ xác nhận'
     PENDING = 'Đang xử lý'
     COMPLETED = 'Hoàn tất'
     CANCELLED = 'Đã hủy'

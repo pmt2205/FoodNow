@@ -37,9 +37,10 @@
                     <form method="post" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-inline">
                         <div class="input-group input-group-sm">
                             <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                {% for s in ['PENDING', 'COMPLETED', 'CANCELLED'] %}
+                                {% for s in ['WAITTING', 'PENDING', 'COMPLETED', 'CANCELLED'] %}
                                 <option value="{{ s }}" {% if order.status.name == s %}selected{% endif %}>
                                     {{ {
+                                        'WAITTING': 'Chờ xác nhận',
                                         'PENDING': 'Đang xử lý',
                                         'COMPLETED': 'Hoàn tất',
                                         'CANCELLED': 'Đã hủy'

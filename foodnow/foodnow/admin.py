@@ -1,5 +1,5 @@
 from foodnow import app, db, utils
-from foodnow.models import Restaurant, MenuItem, User, Order, OrderDetail, UserRole, Coupon
+from foodnow.models import Restaurant, MenuItem, User, Order, OrderDetail, UserRole, Coupon, OrderStatus
 from flask_admin import Admin, BaseView, expose, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
@@ -110,6 +110,16 @@ class OrderView(AdminView):
         'created_at': 'Ngày Tạo',
         'total': 'Tổng tiền'
     }
+    form_overrides = {
+        'status': SelectField
+    }
+
+    form_args = {
+        'status': {
+            'choices': [(status.name, status.value) for status in OrderStatus]
+        }
+    }
+
 
 class LogoutView(BaseView):
     @expose('/')

@@ -85,15 +85,20 @@
                                value="{{ current_user.address or '' }}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Số điện thoại</label>
-                        <input type="tel" name="phone" class="form-control" required
-                               value="{{ current_user.phone or '' }}">
+                        <label for="phone">Số điện thoại</label>
+                        <input required type="text" class="form-control" id="phone" name="phone"
+                               value="{{ current_user.phone or '' }}"
+                               placeholder="Số điện thoại"
+                               pattern="^0\d{9}$"
+                               title="Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số">
                     </div>
+
 
                     <div class="mb-3">
                         <label class="form-label">Phương thức thanh toán</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
+                            <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod"
+                                   checked>
                             <label class="form-check-label" for="cod">Thanh toán khi nhận (COD)</label>
                         </div>
                         <div class="form-check">
@@ -101,7 +106,8 @@
                             <label class="form-check-label" for="momo">Thanh toán MoMo</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" value="zalopay" id="zalopay">
+                            <input class="form-check-input" type="radio" name="payment_method" value="zalopay"
+                                   id="zalopay">
                             <label class="form-check-label" for="zalopay">Thanh toán ZaloPay</label>
                         </div>
                     </div>
@@ -121,7 +127,8 @@
                     </div>
 
                     <div class="d-grid mt-2">
-                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                        <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal"
+                                data-bs-target="#confirmModal">
                             Thanh toán
                         </button>
                     </div>
@@ -183,6 +190,7 @@ document.getElementById("checkout-form").addEventListener("submit", function() {
     });
     document.getElementById("selected-items-input").value = selected.join(",");
 });
+
 </script>
 
 {% endblock %}
