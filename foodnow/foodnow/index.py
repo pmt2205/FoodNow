@@ -971,6 +971,27 @@ def profile():
 
                     db.session.commit()
                     success_msg = 'Cập nhật thông tin thành công!'
+        if tab == 'security':
+            old_password = request.form.get('old_password', '').strip()
+            new_password = request.form.get('new_password', '').strip()
+            confirm_password = request.form.get('confirm_password', '').strip()
+
+            # Hash mật khẩu cũ nhập từ form
+            old_hash = hashlib.md5(old_password.encode('utf-8')).hexdigest()
+
+
+            if old_hash != current_user.password:
+                error_msg = "Mật khẩu cũ không đúng."
+            elif new_password != confirm_password:
+                error_msg = "Mật khẩu mới và xác nhận không khớp."
+            elif len(new_password) < 6:
+                error_msg = "Mật khẩu mới phải ít nhất 6 ký tự."
+            else:
+                # Lưu mật khẩu mới
+                current_user.password = hashlib.md5(new_password.encode('utf-8')).hexdigest()
+                db.session.commit()
+                success_msg = "Đổi mật khẩu thành công."
+                print("DEBUG - New hash saved:", current_user.password)
 
     if tab == 'orders':
         orders = Order.query.filter_by(user_id=user.id).all()

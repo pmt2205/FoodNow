@@ -11,9 +11,23 @@
             </div>
             <div class="col-md-6 mb-3">
                 <p class="mb-1 fw-semibold text-muted">Trạng thái</p>
-                <span class="badge {% if order.status.value == 'Hoàn tất' %}bg-success{% else %}bg-secondary{% endif %}">
-                    {{ order.status.value }}
-                </span>
+
+                {% if order.status.value == 'Đã hủy' %}
+                <span class="badge bg-danger">{{ order.status.value }}</span>
+                {% else %}
+                {% set statuses = ['Chờ xác nhận', 'Đang xử lý', 'Hoàn tất'] %}
+                <div class="order-progress">
+                    {% for status in statuses %}
+                    <div class="step {% if order.status.value == status or statuses.index(status) < statuses.index(order.status.value) %}active{% endif %}">
+                        <div class="circle"></div>
+                        <div class="label">{{ status }}</div>
+                    </div>
+                    {% if not loop.last %}
+                    <div class="line {% if statuses.index(status) < statuses.index(order.status.value) %}active{% endif %}"></div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             <div class="col-md-6 mb-3">
                 <p class="mb-1 fw-semibold text-muted">Địa chỉ</p>
@@ -26,7 +40,6 @@
         </div>
 
         <h5 class="fw-bold mb-3">Danh sách món</h5>
-
         <div class="list-group mb-4">
             {% for item in order.details %}
             <div class="list-group-item d-flex justify-content-between align-items-start">
@@ -48,4 +61,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

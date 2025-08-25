@@ -165,3 +165,56 @@ body {
 #notification-popup li a:hover {
     text-decoration: underline;
 }
+
+.order-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    margin-top: 10px;
+}
+
+.step {
+    text-align: center;
+    position: relative;
+    flex: 1;
+}
+
+.step .circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    margin: 0 auto;
+    z-index: 2;
+    position: relative;
+}
+
+.step.active .circle {
+    background-color: #0d6efd;
+}
+
+.step .label {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.line {
+    height: 3px;
+    background-color: #e0e0e0;
+    flex: 1;
+    margin: 0 -10px;
+    z-index: 1;
+}
+
+.line.active {
+    background-color: #0d6efd;
+}
+
+.order-progress > .line:first-of-type {
+    margin-left: 10px;
+}
+.order-progress > .line:last-of-type {
+    margin-right: 10px;
+}
+
