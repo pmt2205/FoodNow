@@ -219,9 +219,9 @@ class UserCoupon(db.Model):
 from sqlalchemy import event
 
 @event.listens_for(Coupon, "after_insert")
-def after_insert_coupon(connection, target):
+def after_insert_coupon(mapper, connection, target):
     # target = coupon vừa được thêm
-    customers = User.query.filter_by(role="customer").all()
+    customers = User.query.filter_by(role=UserRole.CUSTOMER).all()
     for c in customers:
         connection.execute(
             Notification.__table__.insert().values(
