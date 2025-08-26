@@ -60,20 +60,24 @@
             <div class="card card-body shadow-sm">
                 <h3 class="fw-bold mb-3">Thông tin đơn hàng</h3>
 
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
+
                 {% for category, message in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 {% endfor %}
-                {% endif %}
-                {% endwith %}
 
                 <form action="{{ url_for('apply_coupon') }}" method="POST" class="mb-3 d-flex">
-                    <input type="text" name="coupon" class="form-control me-2" placeholder="Nhập mã giảm giá" required>
+                    <input type="text" name="coupon" class="form-control me-2" placeholder="Nhập mã giảm giá"
+                           value="{{ coupon_code or '' }}" required>
                     <button type="submit" class="btn btn-primary">Áp dụng</button>
+
+                    {% if coupon_code %}
+                    <a href="{{ url_for('remove_coupon') }}"
+                       class="btn btn-outline-danger ms-2">Hủy mã</a>
+                    {% endif %}
+
                 </form>
 
                 <form id="checkout-form" method="POST" action="{{ url_for('checkout') }}">
@@ -157,39 +161,39 @@
 </div>
 
 <script>
-function updateTotal() {
-    let subtotal = 0;
-    let discount = 0;
+    function updateTotal() {
+        let subtotal = 0;
+        let discount = 0;
 
-    document.querySelectorAll(".item-checkbox:checked").forEach(cb => {
-        subtotal += parseInt(cb.dataset.price);
-        discount += parseInt(cb.dataset.discount || 0);
+        document.querySelectorAll(".item-checkbox:checked").forEach(cb => {
+            subtotal += parseInt(cb.dataset.price);
+            discount += parseInt(cb.dataset.discount || 0);
+        });
+
+        document.getElementById("subtotal").innerText = subtotal.toLocaleString() + " đ";
+        document.getElementById("discount").innerText = "- " + discount.toLocaleString() + " đ";
+
+        let total = subtotal - discount;
+        if (total < 0) total = 0;
+        document.getElementById("grand-total").innerText = total.toLocaleString() + " đ";
+    }
+
+    // Lần đầu load
+    updateTotal();
+
+    // Khi tick chọn món
+    document.querySelectorAll(".item-checkbox").forEach(cb => {
+        cb.addEventListener("change", updateTotal);
     });
 
-    document.getElementById("subtotal").innerText = subtotal.toLocaleString() + " đ";
-    document.getElementById("discount").innerText = "- " + discount.toLocaleString() + " đ";
-
-    let total = subtotal - discount;
-    if (total < 0) total = 0;
-    document.getElementById("grand-total").innerText = total.toLocaleString() + " đ";
-}
-
-// Lần đầu load
-updateTotal();
-
-// Khi tick chọn món
-document.querySelectorAll(".item-checkbox").forEach(cb => {
-    cb.addEventListener("change", updateTotal);
-});
-
-// Submit form => lưu selected_items
-document.getElementById("checkout-form").addEventListener("submit", function() {
-    let selected = [];
-    document.querySelectorAll(".item-checkbox:checked").forEach(cb => {
-        selected.push(cb.value);
+    // Submit form => lưu selected_items
+    document.getElementById("checkout-form").addEventListener("submit", function() {
+        let selected = [];
+        document.querySelectorAll(".item-checkbox:checked").forEach(cb => {
+            selected.push(cb.value);
+        });
+        document.getElementById("selected-items-input").value = selected.join(",");
     });
-    document.getElementById("selected-items-input").value = selected.join(",");
-});
 
 </script>
 

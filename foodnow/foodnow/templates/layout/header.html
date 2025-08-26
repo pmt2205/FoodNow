@@ -50,22 +50,23 @@
                     {% endif %}
                 </a>
 
-                <div id="notification-popup" class="shadow p-3 bg-white">
-                    <ul class="list-unstyled mb-0">
-                        {% for note in notifications %}
-                        <li class="py-1 border-bottom">
-                            {% if note.order_id %}
-                            <a href="{{ url_for('view_order_detail', order_id=note.order_id) }}"
-                               class="notification-link" data-id="{{ note.id }}">
-                                {{ note.message }}
-                            </a>
-                            {% else %}
-                            {{ note.message }}
-                            {% endif %}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
+               <div id="notification-popup" class="shadow p-3 bg-white">
+    <ul class="list-unstyled mb-0">
+        {% for note in notifications %}
+        <li class="py-2 border-bottom {% if not note.is_read %}fw-bold{% else %}text-muted{% endif %}">
+            {% if note.order_id %}
+            <a href="{{ url_for('view_order_detail', order_id=note.order_id) }}"
+               class="notification-link" data-id="{{ note.id }}">
+                {{ note.message }}
+            </a>
+            {% else %}
+            <span class="notification-link" data-id="{{ note.id }}">{{ note.message }}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
 
 
                 {% if current_user.is_authenticated %}

@@ -216,6 +216,24 @@ class UserCoupon(db.Model):
 
     __table_args__ = (db.UniqueConstraint('user_id', 'coupon_id', name='uix_user_coupon'),)
 
+from sqlalchemy import event
+
+@event.listens_for(Coupon, "after_insert")
+def after_insert_coupon(connection, target):
+    # target = coupon vừa được thêm
+    customers = User.query.filter_by(role="customer").all()
+    for c in customers:
+        connection.execute(
+            Notification.__table__.insert().values(
+                user_id=c.id,
+                message=f"Mã giảm giá mới: {target.code} - Giảm {target.discount_percent}% "
+                        f"(ĐH tối thiểu {target.min_order_value}đ, HSD: {target.expires_at.date() if target.expires_at else 'Không giới hạn'})",
+                is_read=False,
+                created_at=datetime.now()
+            )
+        )
+
+
 
 if __name__ == '__main__':
     with app.app_context():

@@ -1,5 +1,5 @@
 import sys, os, utils, requests, uuid, hmac, hashlib
-from datetime import datetime
+from datetime import datetime,date
 from sqlalchemy.sql import func
 import re
 from pytz import timezone, utc
@@ -285,9 +285,23 @@ def checkout():
     address = request.form.get("address")
     phone = request.form.get("phone")
     payment_method = request.form.get("payment_method")
-
+    coupon_code = session.get("applied_coupon")
+    coupon = None
+    if coupon_code:
+        coupon = Coupon.query.filter_by(code=coupon_code.strip().upper()).first()
+        if coupon:
+            used = UserCoupon.query.filter_by(user_id=current_user.id, coupon_id=coupon.id).first()
+            subtotal_temp = sum(item.menu_item.price * item.quantity for item in cart)
+            if used or not coupon.is_valid(subtotal=subtotal_temp):
+                coupon = None
+                coupon_code = None
     # Tính tổng tiền
-    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id)
+    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id,coupon_code)
+    for item in cart:
+        item_discount = 0
+        if discount > 0:
+            item_discount = (item.menu_item.price * item.quantity / subtotal) * discount
+        item.discount = item_discount
 
     restaurant_id = cart[0].menu_item.restaurant_id
     status = OrderStatus.WAITTING if payment_method == "cod" else OrderStatus.CANCELLED
@@ -311,6 +325,7 @@ def checkout():
             menu_item_id=item.menu_item.id,
             quantity=item.quantity,
             price=item.menu_item.price,
+            discount=getattr(item, 'discount', 0)
         )
         db.session.add(detail)
 
@@ -319,9 +334,21 @@ def checkout():
         CartItem.user_id == current_user.id,
         CartItem.id.in_(selected_ids)
     ).delete(synchronize_session=False)
+    if coupon_code and coupon:
+        user_coupon = UserCoupon(user_id=current_user.id, coupon_id=coupon.id)
+        db.session.add(user_coupon)
+        coupon.used_count += 1
+    notification = Notification(
+        user_id=current_user.id,
+        message=f"Đơn hàng #{order.id} của bạn đã được đặt thành công!",
+        order_id=order.id
+    )
+    db.session.add(notification)
+    db.session.commit()
+    session.pop("applied_coupon", None)
+    session.pop("discount_code", None)
 
     db.session.commit()
-
     # Nếu COD -> gửi mail ngay
     if payment_method == "cod":
         send_order_email(order, current_user)
@@ -739,7 +766,7 @@ def view_cart():
                            subtotal=subtotal,
                            discount=discount,
                            total_price=total_price,
-                           apply_coupon=coupon_code)
+                           coupon_code=coupon_code)
 
 
 @app.route('/cart/update/<int:cart_id>/<change>')
@@ -946,6 +973,18 @@ def profile():
             dob = request.form.get('dob')
             email = request.form.get('email', '').strip()
             address = request.form.get('address', '').strip()
+            if dob:
+                try:
+                    dob = datetime.strptime(dob, "%Y-%m-%d").date()
+                    if dob > date.today():
+                        flash("Ngày sinh không được lớn hơn ngày hiện tại!", "danger")
+                        return redirect(url_for("profile"))
+                    current_user.dob = dob
+                except ValueError:
+                    flash("Ngày sinh không hợp lệ!", "danger")
+                    return redirect(url_for("profile"))
+            else:
+                current_user.dob = None
             if not email:
                 error_msg = 'Email không được để trống!'
             elif not re.match(r"^0\d{9}$", phone or ""):
@@ -1078,6 +1117,14 @@ def inject_cart_count():
     if current_user.is_authenticated:
         count = CartItem.query.filter_by(user_id=current_user.id).count()
     return dict(cart_count=count)
+
+
+@app.route('/remove_coupon')
+@login_required
+def remove_coupon():
+    session.pop('applied_coupon', None)  # xóa mã trong session
+    flash("Đã hủy mã giảm giá!", "info")
+    return redirect(url_for('view_cart'))
 
 
 if __name__ == '__main__':
