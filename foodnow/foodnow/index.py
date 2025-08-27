@@ -750,7 +750,7 @@ def add_to_cart(menu_id):
     else:
         item = CartItem(user_id=current_user.id, menu_item_id=menu_id, quantity=1)
         db.session.add(item)
-        is_new_item = True  # 🔸 Đánh dấu là món mới
+        is_new_item = True  #Đánh dấu là món mới
 
     db.session.commit()
 
