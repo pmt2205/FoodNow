@@ -55,10 +55,15 @@
                         <h5 class="fw-bold">{{ item.name }}</h5>
                         <p class="text-success fw-semibold mb-0">{{ '{:,.0f} đ'.format(item.price) }}</p>
                         <p class="text-muted">{{ item.description }}</p>
-                        {% if not item.available %}
-                        <span class="badge bg-secondary">Hết hàng</span>
+                        {% if item.stock > 0 %}
+                        {% if item.stock < 10 %}
+                        <span class="text-warning danger">Chỉ còn {{ item.stock }} phần</span>
+                        {% else %}
+                        <span class="text-success">Còn lại: {{ item.stock }}</span>
                         {% endif %}
-
+                        {% else %}
+                        <span class="text-danger">Hết hàng</span>
+                        {% endif %}
                     </div>
                 </div>
                 <a href="{{ url_for('add_to_cart', menu_id=item.id) }}"
@@ -121,12 +126,12 @@
 
 </div>
 <script>
-function updateMap() {
-    let address = document.getElementById("address").value;
-    if (address.trim() !== "") {
-        let mapUrl = "https://www.google.com/maps?q=" + encodeURIComponent(address) + "&output=embed";
-        document.getElementById("mapFrame").src = mapUrl;
+    function updateMap() {
+        let address = document.getElementById("address").value;
+        if (address.trim() !== "") {
+            let mapUrl = "https://www.google.com/maps?q=" + encodeURIComponent(address) + "&output=embed";
+            document.getElementById("mapFrame").src = mapUrl;
+        }
     }
-}
 </script>
 {% endblock %}

@@ -37,6 +37,10 @@
                 <p class="mb-1 fw-semibold text-muted">Số điện thoại</p>
                 <p class="mb-0">{{ order.phone }}</p>
             </div>
+            <div class="mb-3">
+                <strong>Ghi chú đơn hàng:</strong>
+                <p>{{ order.note }}</p>
+            </div>
         </div>
 
         <h5 class="fw-bold mb-3">Danh sách món</h5>
@@ -50,7 +54,8 @@
                 <div class="text-end">
                     <div>Đơn giá: {{ '{:,.0f} đ'.format(item.price) }}</div>
                     <div>Giảm giá: <strong>{{ '{:,.0f} đ'.format(item.discount) }}</strong></div>
-                    <div>Thành tiền: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity - item.discount) }}</strong></div>
+                    <div>Thành tiền: <strong>{{ '{:,.0f} đ'.format(item.price * item.quantity - item.discount)
+                        }}</strong></div>
                 </div>
             </div>
             {% endfor %}

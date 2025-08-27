@@ -86,7 +86,7 @@ class MenuItem(BaseModel):
     price = Column(Float, nullable=False)
     available = Column(Boolean, default=True)
     image = Column(String(255), nullable=True)
-
+    stock = Column(Integer, default=0, nullable=False)
     restaurant_id = Column(Integer, ForeignKey('restaurant.id', ondelete='CASCADE'), nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
 
@@ -124,7 +124,7 @@ class Order(db.Model):
     address = db.Column(db.String(255))
     phone = db.Column(db.String(20))
     payment_method = db.Column(db.String(20))
-
+    note = db.Column(db.String(255))
     details = db.relationship('OrderDetail', backref='order', lazy=True)
 
     def calculate_total(self):
@@ -384,12 +384,12 @@ if __name__ == '__main__':
 
         mon12 = MenuItem(
             name='Chè khúc bạch', description='Tráng miệng mát lạnh', price=25000, available=True,
-            image='https://images.unsplash.com/photo-1609758560942-986c697b84da',
+            image='https://images.unsplash.com/photo-1609758560942-986c697b84da', stock =20,
             restaurant_id=nha_hang.id, category_id=cat_trang_mieng.id)
 
         mon13 = MenuItem(
             name='Sinh tố bơ', description='Sinh tố bơ béo ngậy', price=30000, available=True,
-            image='https://images.unsplash.com/photo-1615486369604-6cc8e9ae4a8b',
+            image='https://images.unsplash.com/photo-1615486369604-6cc8e9ae4a8b',stock=20,
             restaurant_id=nha_hang.id, category_id=cat_nuoc_uong.id)
         # mon4, mon5, mon6, mon7, mon8, mon9, mon10, mon11,
         new_coupon = Coupon(

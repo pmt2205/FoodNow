@@ -298,6 +298,11 @@ def checkout():
     # Tính tổng tiền
     subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id,coupon_code)
     for item in cart:
+        menu_item = item.menu_item
+        if item.quantity > menu_item.stock:
+            flash(f"{menu_item.name} chỉ còn {menu_item.stock} phần!", "danger")
+            return redirect(url_for("view_cart"))
+        menu_item.stock -= item.quantity
         item_discount = 0
         if discount > 0:
             item_discount = (item.menu_item.price * item.quantity / subtotal) * discount
@@ -305,7 +310,9 @@ def checkout():
 
     restaurant_id = cart[0].menu_item.restaurant_id
     status = OrderStatus.WAITTING if payment_method == "cod" else OrderStatus.CANCELLED
-
+    note = request.form.get("note", "").strip()
+    if not note:
+        note = ""
     order = Order(
         user_id=current_user.id,
         restaurant_id=restaurant_id,
@@ -313,7 +320,8 @@ def checkout():
         phone=phone,
         total=total_price,
         status=status,
-        payment_method=payment_method
+        payment_method=payment_method,
+        note=note
     )
     db.session.add(order)
     db.session.commit()
@@ -721,11 +729,23 @@ def submit_review(restaurant_id):
 @app.route('/add-to-cart/<int:menu_id>')
 @login_required
 def add_to_cart(menu_id):
+    # Lấy món ăn từ DB
+    menu_item = MenuItem.query.get_or_404(menu_id)
+
+    # Nếu món đã hết hàng
+    if menu_item.stock <= 0:
+        flash(f"{menu_item.name} đã hết hàng!", "danger")
+        return redirect(url_for("view_cart"))
+
     # Tìm xem món đã có trong giỏ chưa
     item = CartItem.query.filter_by(user_id=current_user.id, menu_item_id=menu_id).first()
-
     is_new_item = False
+
     if item:
+        # Nếu số lượng trong giỏ đã bằng stock thì không cho thêm nữa
+        if item.quantity >= menu_item.stock:
+            flash(f"Bạn đã chọn tối đa {menu_item.stock} phần cho {menu_item.name}", "warning")
+            return redirect(url_for("view_cart"))
         item.quantity += 1
     else:
         item = CartItem(user_id=current_user.id, menu_item_id=menu_id, quantity=1)
@@ -734,10 +754,9 @@ def add_to_cart(menu_id):
 
     db.session.commit()
 
-    # Nếu dùng AJAX bạn có thể return JSON tại đây
-    # return jsonify({'new_item': is_new_item, 'cart_count': CartItem.query.filter_by(user_id=current_user.id).count()})
+    flash(f"Đã thêm {menu_item.name} vào giỏ hàng!", "success")
+    return redirect(url_for("view_cart"))
 
-    return redirect(url_for('view_cart'))
 
 from flask_login import LoginManager
 
@@ -750,7 +769,7 @@ def load_user(user_id):
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
-    flash("Bạn cần đăng nhập để xem giỏ hàng.", "warning")
+    flash("Bạn cần đăng nhập để thêm món ăn vào giỏ hàng.", "warning")
     return redirect(url_for("login_process"))
 
 @app.route('/cart')

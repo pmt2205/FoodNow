@@ -44,7 +44,7 @@
                                    class="btn btn-outline-secondary">+</a>
                             </div>
                             <span class="fw-bold me-3" style="width: 100px;">
-                                {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity - item.discount | default(0)) }}
+                                {{ '{:,.0f} đ'.format(item.menu_item.price * item.quantity | default(0)) }}
                             </span>
                             <a href="{{ url_for('remove_from_cart', cart_id=item.id) }}"
                                class="btn btn-outline-danger"><i class="fas fa-trash-alt"></i></a>
@@ -92,9 +92,14 @@
                         <label for="phone">Số điện thoại</label>
                         <input required type="text" class="form-control" id="phone" name="phone"
                                value="{{ current_user.phone or '' }}"
-                               placeholder="Số điện thoại"
+
                                pattern="^0\d{9}$"
                                title="Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea name="note" class="form-control" rows="2"></textarea>
                     </div>
 
 
