@@ -8,7 +8,7 @@ services:
     ports:
       - "80:80"
     environment:
-      - DB_HOST=db-test.cb7hspzehogr.us-east-1.rds.amazonaws.com
-      - DB_USER=lehongduc3491
+      - DB_HOST=foodnow.cs9awkas4ybu.us-east-1.rds.amazonaws.com
+      - DB_USER=admin
       - DB_PASSWORD=123456789a
       - DB_NAME=fooddb
