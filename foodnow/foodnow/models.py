@@ -25,7 +25,6 @@ class BaseModel(db.Model):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-# Người dùng
 class User(BaseModel, UserMixin):
     __tablename__ = 'user'
     username = Column(String(100), nullable=False, unique=True)
