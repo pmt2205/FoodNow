@@ -1146,7 +1146,6 @@ def remove_coupon():
     flash("Đã hủy mã giảm giá!", "info")
     return redirect(url_for('view_cart'))
 
-
 if __name__ == '__main__':
     with app.app_context():
         from foodnow import admin
