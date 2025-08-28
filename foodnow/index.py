@@ -1138,7 +1138,6 @@ def inject_cart_count():
         count = CartItem.query.filter_by(user_id=current_user.id).count()
     return dict(cart_count=count)
 
-
 @app.route('/remove_coupon')
 @login_required
 def remove_coupon():
