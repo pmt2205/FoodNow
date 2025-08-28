@@ -410,6 +410,6 @@ if __name__ == '__main__':
         db.session.add_all([ mon12, mon13, new_coupon,new_coupon1])
         db.session.commit()
 
-        print("✅ Đã thêm 6 nhà hàng và 10 món ăn mới!")
+        print(" Đã thêm 6 nhà hàng và 10 món ăn mới!")
 
 

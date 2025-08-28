@@ -26,6 +26,7 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Cấu hình Google OAuth
 google_bp = make_google_blueprint(
+
     redirect_to='google_login',
     scope=[
         "https://www.googleapis.com/auth/userinfo.email",
@@ -1150,4 +1151,4 @@ if __name__ == '__main__':
     with app.app_context():
         from foodnow import admin
 
-        app.run(debug=True, host="0.0.0.0", port=80)
+        app.run(debug=True, host="0.0.0.0", port=5000)
