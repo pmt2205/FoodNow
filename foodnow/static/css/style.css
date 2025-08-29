@@ -218,3 +218,54 @@ body {
     margin-right: 10px;
 }
 
+.payment-options {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.payment-card {
+    flex: 1;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.payment-card input {
+    display: none;
+}
+
+.payment-card .content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+
+
+.payment-card input:checked ~ .content,
+.payment-card input:checked ~ img {
+    color: #0d6efd;
+}
+
+.payment-card input:checked ~ * {
+    border-color: #0d6efd;
+}
+
+.payment-card:has(input:checked) {
+    border-color: #0d6efd;
+    box-shadow: 0 0 6px rgba(13,110,253,0.4);
+}
+
+
+.pay-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}

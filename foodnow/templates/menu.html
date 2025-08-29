@@ -75,30 +75,29 @@
         </div>
         {% endfor %}
     </div>
-    {% if current_user.is_authenticated and has_ordered %}
-    <div class="mt-4">
-        <h3 class="display-6 fw-bold mb-4">Đánh giá nhà hàng</h3>
-        <form method="post" action="{{ url_for('submit_review', restaurant_id=restaurant.id) }}"
-              class="card card-body shadow-sm border-0">
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Chọn số sao</label>
-                <div class="rating">
-                    {% for i in range(5, 0, -1) %}
-                    <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" required>
-                    <label for="star{{ i }}">★</label>
-                    {% endfor %}
-                </div>
+    {% if current_user.is_authenticated and has_ordered and current_user %}
+    <form id="review-form" method="post" action="{{ url_for('submit_review', restaurant_id=restaurant.id) }}"
+          class="card card-body shadow-sm border-0">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Chọn số sao</label>
+            <div class="rating">
+                {% for i in range(5, 0, -1) %}
+                <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}">
+                <label for="star{{ i }}">★</label>
+                {% endfor %}
             </div>
-            <div class="mb-3">
-                <label for="comment" class="form-label fw-semibold">Nhận xét</label>
-                <textarea name="comment" id="comment" class="form-control" rows="3"
-                          placeholder="Nhận xét của bạn..."></textarea>
+            <div id="rating-error" class="text-danger small mt-1" style="display:none;">
+                Vui lòng chọn số sao!
             </div>
-            <div class="text-end">
-                <button type="submit" class="btn btn-success fw-semibold">Gửi đánh giá</button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="mb-3">
+            <label for="comment" class="form-label fw-semibold">Nhận xét</label>
+            <textarea name="comment" id="comment" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success fw-semibold">Gửi đánh giá</button>
+        </div>
+    </form>
     {% elif current_user.is_authenticated %}
     <div class="alert alert-warning mt-4">
         Bạn cần đặt hàng từ nhà hàng này trước khi đánh giá.
@@ -130,8 +129,19 @@
         let address = document.getElementById("address").value;
         if (address.trim() !== "") {
             let mapUrl = "https://www.google.com/maps?q=" + encodeURIComponent(address) + "&output=embed";
-            document.getElementById("mapFrame").src = mapUrl;
+            document.getElementById("mapFrame").src = mapUrl
         }
     }
+document.getElementById("review-form").addEventListener("submit", function(e) {
+    let checked = document.querySelector('input[name="rating"]:checked')
+    let errorMsg = document.getElementById("rating-error")
+
+    if (!checked) {
+        e.preventDefault(); // chặn submit
+        errorMsg.style.display = "block"; // hiện thông báo
+    } else {
+        errorMsg.style.display = "none"; // ẩn nếu hợp lệ
+    }
+})
 </script>
 {% endblock %}

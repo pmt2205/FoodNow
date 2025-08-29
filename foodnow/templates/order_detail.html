@@ -15,7 +15,7 @@
                 {% if order.status.value == 'Đã hủy' %}
                 <span class="badge bg-danger">{{ order.status.value }}</span>
                 {% else %}
-                {% set statuses = ['Chờ xác nhận', 'Đang xử lý', 'Hoàn tất'] %}
+                {% set statuses = ['Chờ xác nhận', 'Đang xử lý','Đang giao', 'Hoàn tất'] %}
                 <div class="order-progress">
                     {% for status in statuses %}
                     <div class="step {% if order.status.value == status or statuses.index(status) < statuses.index(order.status.value) %}active{% endif %}">
@@ -64,6 +64,37 @@
         <div class="text-end border-top pt-3">
             <span class="fw-bold fs-5">Tổng cộng: {{ '{:,.0f} đ'.format(order.total) }}</span>
         </div>
+        <div class="mt-4 d-flex justify-content-end">
+            {% if order.status == OrderStatus.DELIVERING %}
+            <!-- Nút mở modal -->
+            <button type="button" class="btn-confirm" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                <i class="bi bi-check-circle me-2"></i> Xác nhận đã nhận hàng
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Modal xác nhận -->
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content shadow-lg rounded-4">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmModalLabel">Xác nhận đơn hàng</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        Bạn có chắc chắn đã nhận được đơn hàng này chưa?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy
+                        </button>
+                        <form action="{{ url_for('confirm_received', order_id=order.id) }}" method="post">
+                            <button type="submit" class="btn btn-success rounded-pill px-4">OK</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 

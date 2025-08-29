@@ -470,6 +470,30 @@ def momo_ipn():
     return "ok", 200
 
 
+@app.route("/confirm_received/<int:order_id>", methods=["POST"])
+@login_required
+def confirm_received(order_id):
+    order = Order.query.get_or_404(order_id)
+
+    # Kiểm tra quyền
+    if order.user_id != current_user.id:
+        flash("Bạn không có quyền xác nhận đơn này.", "danger")
+        return redirect(url_for("view_order_detail", order_id=order.id))
+
+    # Chỉ cho xác nhận khi đang giao
+    if order.status != OrderStatus.DELIVERING:
+        flash("Đơn hàng chưa đến trạng thái 'Đang giao'.", "warning")
+        return redirect(url_for("view_order_detail", order_id=order.id))
+
+    # Cập nhật trạng thái
+    order.status = OrderStatus.COMPLETED
+    db.session.commit()
+
+    flash("Xác nhận đơn hàng thành công. Cảm ơn bạn!", "success")
+    return redirect(url_for("view_menu", rid=order.restaurant_id)+ "#review-section")
+
+
+
 @app.route("/apply_coupon", methods=["POST"])
 @login_required
 def apply_coupon():
@@ -639,7 +663,7 @@ def manage_menu(restaurant_id):
         price = float(request.form.get('price'))  # ép float
         description = request.form.get('description')
         category_id = int(request.form.get('category_id'))
-
+        stock = float(request.form.get('stock'))
         image = request.files.get('image')
         filename = None
         if image and image.filename != '':
@@ -657,6 +681,7 @@ def manage_menu(restaurant_id):
             description=description,
             category_id=category_id,
             restaurant_id=restaurant.id,
+            stock=stock,
             image=image_path
         )
         db.session.add(menu_item)
@@ -778,7 +803,8 @@ def unauthorized_callback():
 def view_cart():
     cart = CartItem.query.filter_by(user_id=current_user.id).all()
     coupon_code = session.get("applied_coupon")  # lấy coupon từ session nếu có
-
+    phone = request.form.get("phone")
+    address = request.form.get("address")
     subtotal, discount, total_price = utils.calculate_total_price(cart,current_user.id,coupon_code)
 
     return render_template('cart.html',
@@ -786,7 +812,8 @@ def view_cart():
                            subtotal=subtotal,
                            discount=discount,
                            total_price=total_price,
-                           coupon_code=coupon_code)
+                           coupon_code=coupon_code,
+                           )
 
 
 @app.route('/cart/update/<int:cart_id>/<change>')
@@ -826,7 +853,7 @@ def view_order_detail(order_id):
         flash("Bạn không có quyền xem đơn hàng này", "danger")
         return redirect(url_for("home"))
 
-    return render_template('order_detail.html', order=order)
+    return render_template('order_detail.html', order=order,OrderStatus=OrderStatus)
 
 @app.route('/notification/mark_read/<int:notification_id>', methods=['POST'])
 @login_required
@@ -936,6 +963,7 @@ def logout_process():
 def register_process():
     error_msg = ''
     if request.method == 'POST':
+        name = request.form.get("name")
         password = request.form.get('password')
         confirm = request.form.get('confirm')
         username = request.form.get('username')
@@ -945,12 +973,11 @@ def register_process():
         if not password:
             flash("Mật khẩu không được để trống!", "error")
         if User.query.filter_by(email=email).first():
-            return render_template("register.html", err_msg="Email đã được sử dụng!")
+            return render_template("register.html",form=request.form, err_msg="Email đã được sử dụng!")
         if User.query.filter_by(username=username).first():
-            return render_template("register.html", err_msg="Tên đăng nhập đã tồn tại!")
+            return render_template("register.html",form=request.form, err_msg="Tên đăng nhập đã tồn tại!")
         elif not re.match(pattern, password):
-            flash("Mật khẩu phải ≥8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt!", "error")
-            return render_template("register.html", err_msg="Mật khẩu không hợp lệ!")
+            return render_template("register.html",form=request.form, err_msg="Mật khẩu phải ≥8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt!")
         if password == confirm:
             data = request.form.copy()
             del data['confirm']
@@ -970,7 +997,7 @@ def register_process():
         else:
             error_msg = 'Mật khẩu xác nhận không khớp!'
 
-    return render_template('register.html', err_msg=error_msg)
+    return render_template('register.html',form={}, err_msg=error_msg)
 
 
 @login.user_loader
@@ -1037,14 +1064,14 @@ def profile():
 
             # Hash mật khẩu cũ nhập từ form
             old_hash = hashlib.md5(old_password.encode('utf-8')).hexdigest()
-
+            pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
 
             if old_hash != current_user.password:
                 error_msg = "Mật khẩu cũ không đúng."
             elif new_password != confirm_password:
                 error_msg = "Mật khẩu mới và xác nhận không khớp."
-            elif len(new_password) < 6:
-                error_msg = "Mật khẩu mới phải ít nhất 6 ký tự."
+            elif not re.match(pattern, new_password):
+                error_msg = "Mật khẩu phải ≥8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt."
             else:
                 # Lưu mật khẩu mới
                 current_user.password = hashlib.md5(new_password.encode('utf-8')).hexdigest()

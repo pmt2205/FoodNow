@@ -55,17 +55,18 @@ class RestaurantView(AdminView):
 
 
 class MenuItemView(AdminView):
-    column_list = ['name', 'price', 'category_id', 'restaurant_id']
+    column_list = ['name', 'price', 'category_id', 'restaurant_id','stock']
     column_searchable_list = ['name']
-    column_filters = ['price', 'category_id', 'restaurant_id']
+    column_filters = ['price', 'category_id', 'restaurant_id',]
     column_labels = {
         'name': 'Tên Món',
         'price': 'Giá',
         'category_id': 'Danh Mục',
-        'restaurant_id': 'Nhà Hàng'
+        'restaurant_id': 'Nhà Hàng',
+        'stock': 'Số lượng'
     }
 
-    form_columns = ['name', 'description', 'price', 'available', 'image', 'category_id', 'restaurant_id']
+    form_columns = ['name', 'description', 'price', 'available','stock', 'image', 'category_id', 'restaurant_id']
 
     def on_model_change(self, form, model, is_created):
         restaurant = Restaurant.query.get(model.restaurant_id)

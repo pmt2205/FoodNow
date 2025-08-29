@@ -10,7 +10,10 @@
                 <input required type="text" name="name" class="form-control" placeholder="Tên món">
             </div>
             <div class="col-md-2">
-                <input required type="number" step="1000" name="price" class="form-control" placeholder="Giá">
+                <input required type="number" step="1000" min="0" name="price" class="form-control" placeholder="Giá">
+            </div>
+            <div class="col-md-2">
+                <input required type="number" step="1" min="0" name="stock" class="form-control" placeholder="Số lượng">
             </div>
             <div class="col-md-3">
                 <select name="category_id" class="form-select" required>
@@ -48,7 +51,7 @@
                         <div class="dropdown text-end">
                             <button class="btn btn-sm p-1" type="button" id="menuDropdown{{ item.id }}"
                                     data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-three-dots-vertical fs-4 fw-bold text-white"></i>
+                                <i class="bi bi-three-dots-vertical fs-4 fw-bold "></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuDropdown{{ item.id }}">
                                 <li>
@@ -57,9 +60,10 @@
                                     </a>
                                 </li>
                                 <li>
+                                    <!-- Form delete -->
                                     <form action="{{ url_for('delete_menu_item', item_id=item.id) }}" method="post"
                                           onsubmit="return confirm('Bạn chắc chắn muốn xóa món này?')">
-                                        <button type="submit" class="dropdown-item text-danger">
+                                        <button type="submit" class="dropdown-item text-danger w-100 text-start">
                                             <i class="bi bi-trash me-2"></i> Xóa
                                         </button>
                                     </form>
@@ -67,6 +71,7 @@
                             </ul>
                         </div>
                     </div>
+
 
                 </div>
             </div>

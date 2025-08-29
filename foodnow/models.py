@@ -111,13 +111,14 @@ class OrderStatus(StatusEnum):
     WAITTING = 'Chờ xác nhận'
     PENDING = 'Đang xử lý'
     COMPLETED = 'Hoàn tất'
+    DELIVERING = 'Đang giao'
     CANCELLED = 'Đã hủy'
 # Đơn hàng
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id))
     restaurant_id = db.Column(db.Integer, db.ForeignKey(Restaurant.id))
-    status = db.Column(db.Enum(OrderStatus), default=OrderStatus.PENDING, nullable=False)
+    status = db.Column(db.Enum(OrderStatus), default=OrderStatus.WAITTING, nullable=False)
     total = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.now)
     address = db.Column(db.String(255))
@@ -214,23 +215,6 @@ class UserCoupon(db.Model):
     coupon = db.relationship('Coupon', backref='used_by_users')
 
     __table_args__ = (db.UniqueConstraint('user_id', 'coupon_id', name='uix_user_coupon'),)
-
-from sqlalchemy import event
-
-@event.listens_for(Coupon, "after_insert")
-def after_insert_coupon(mapper, connection, target):
-    # target = coupon vừa được thêm
-    customers = User.query.filter_by(role=UserRole.CUSTOMER).all()
-    for c in customers:
-        connection.execute(
-            Notification.__table__.insert().values(
-                user_id=c.id,
-                message=f"Mã giảm giá mới: {target.code} - Giảm {target.discount_percent}% "
-                        f"(ĐH tối thiểu {target.min_order_value}đ, HSD: {target.expires_at.date() if target.expires_at else 'Không giới hạn'})",
-                is_read=False,
-                created_at=datetime.now()
-            )
-        )
 
 
 

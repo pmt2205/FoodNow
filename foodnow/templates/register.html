@@ -9,24 +9,20 @@
                     <div class="card-body p-4">
                         <h2 class="text-center text-success fw-bold mb-4">Đăng Ký Người Dùng</h2>
 
-                        {% if err_msg %}
-                        <div class="alert alert-danger">{{ err_msg }}</div>
-                        {% endif %}
-
                         <form method="post" action="/register" enctype="multipart/form-data">
                             <div class="form-floating mb-3">
-                                <input required type="text" class="form-control" id="name" name="name" placeholder="Họ tên">
+                                <input required type="text" class="form-control" id="name" name="name" placeholder="Họ tên" value="{{ form.get('name', '') }}">
                                 <label for="name">Họ tên</label>
                             </div>
 
                             <div class="form-floating mb-3">
-                                <input required type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập">
+                                <input required type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập" value="{{ form.get('username', '') }}">
                                 <label for="username">Tên đăng nhập</label>
                             </div>
 
                             <!-- Trường Email -->
                             <div class="form-floating mb-3">
-                                <input required type="email" class="form-control" id="email" name="email" placeholder="Email">
+                                <input required type="email" class="form-control" id="email" name="email" placeholder="Email" value="{{ form.get('email', '') }}">
                                 <label for="email">Email</label>
                             </div>
 
@@ -34,14 +30,15 @@
                                 <input required type="text" class="form-control" id="phone" name="phone"
                                        placeholder="Số điện thoại"
                                        pattern="^0\d{9}$"
-                                       title="Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số">
+                                       title="Số điện thoại phải bắt đầu bằng 0 và có đúng 10 số"
+                                       value="{{ form.get('phone', '') }}"
+                                >
                                 <label for="phone">Số điện thoại</label>
                             </div>
                             <div class="form-floating mb-3">
-                                <input required type="text" class="form-control" id="address" name="address" placeholder="Địa chỉ">
+                                <input required type="text" class="form-control" id="address" name="address" placeholder="Địa chỉ" value="{{ form.get('address', '') }}">
                                 <label for="address">Địa chỉ</label>
                             </div>
-
                             <div class="mb-3">
                                 <label for="role" class="form-label fw-semibold">Vai trò</label>
                                 <select class="form-select" id="role" name="role" required>
@@ -59,7 +56,9 @@
                                 <input required type="password" class="form-control" id="confirm" name="confirm" placeholder="Xác nhận mật khẩu">
                                 <label for="confirm">Xác nhận mật khẩu</label>
                             </div>
-
+                            {% if err_msg %}
+                            <div id="login-error" class="alert alert-danger">{{ err_msg }}</div>
+                            {% endif %}
                             <div class="mb-4">
                                 <label for="avatar" class="form-label fw-semibold">Ảnh đại diện</label>
                                 <input type="file" class="form-control" id="avatar" name="avatar">
@@ -81,5 +80,12 @@
         </div>
     </div>
 </section>
-
+<script>
+  window.onload = function() {
+    var errorBox = document.getElementById("login-error");
+    if (errorBox) {
+      errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+</script>
 {% endblock %}
