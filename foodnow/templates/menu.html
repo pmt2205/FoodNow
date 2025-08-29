@@ -2,6 +2,7 @@
 {% block content %}
 
 <div class="container py-5">
+    <!-- Thông tin nhà hàng -->
     <div class="card shadow-lg border-0 mb-5">
         <img src="{{ restaurant.image or 'https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found' }}"
              onerror="this.onerror=null;this.src='https://placehold.co/800x600/cccccc/ffffff?text=Image+Not+Found';"
@@ -12,7 +13,7 @@
                     <h2 class="display-5 fw-bold">{{ restaurant.name }}</h2>
                     <p class="text-muted mb-1">{{ restaurant.description }}</p>
                     <p class="text-muted mb-0">{{ restaurant.address }}</p>
-                    <div class="col-12">
+                    <div class="col-12 mt-3">
                         <iframe id="mapFrame"
                                 width="100%"
                                 height="300"
@@ -23,25 +24,16 @@
                         </iframe>
                     </div>
                 </div>
-
                 {% if average_rating %}
                 <div class="text-end">
-        <span class="fs-4 fw-bold text-warning d-block">
-            ★ {{ average_rating }}
-        </span>
+                    <span class="fs-4 fw-bold text-warning d-block">★ {{ average_rating }}</span>
                 </div>
                 {% endif %}
             </div>
-            <!--            {% if restaurant.discount %}-->
-            <!--            <div class="mt-2">-->
-            <!--                    <span class="badge bg-danger-subtle text-danger-emphasis fs-6">-->
-            <!--                        <i class="fas fa-tag me-1"></i> Giảm {{ restaurant.discount }}%-->
-            <!--                    </span>-->
-            <!--            </div>-->
-            <!--            {% endif %}-->
         </div>
     </div>
 
+    <!-- Thực đơn -->
     <h3 class="display-6 fw-bold mb-4">Thực đơn</h3>
     <div class="row g-4">
         {% for item in menu %}
@@ -57,7 +49,7 @@
                         <p class="text-muted">{{ item.description }}</p>
                         {% if item.stock > 0 %}
                         {% if item.stock < 10 %}
-                        <span class="text-warning danger">Chỉ còn {{ item.stock }} phần</span>
+                        <span class="text-warning">Chỉ còn {{ item.stock }} phần</span>
                         {% else %}
                         <span class="text-success">Còn lại: {{ item.stock }}</span>
                         {% endif %}
@@ -66,82 +58,166 @@
                         {% endif %}
                     </div>
                 </div>
-                <a href="{{ url_for('add_to_cart', menu_id=item.id) }}"
-                   class="btn btn-outline-success fw-bold">
-                    Thêm
-                </a>
-
+                <a href="{{ url_for('add_to_cart', menu_id=item.id) }}" class="btn btn-outline-success fw-bold">Thêm</a>
             </div>
         </div>
         {% endfor %}
     </div>
-    {% if current_user.is_authenticated and has_ordered and current_user %}
-    <form id="review-form" method="post" action="{{ url_for('submit_review', restaurant_id=restaurant.id) }}"
-          class="card card-body shadow-sm border-0">
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Chọn số sao</label>
-            <div class="rating">
-                {% for i in range(5, 0, -1) %}
-                <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}">
-                <label for="star{{ i }}">★</label>
-                {% endfor %}
-            </div>
-            <div id="rating-error" class="text-danger small mt-1" style="display:none;">
-                Vui lòng chọn số sao!
-            </div>
+
+    <!-- Form đánh giá -->
+    {% if current_user.is_authenticated and current_user.role.value == 'CUSTOMER' and has_ordered %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Đánh giá nhà hàng</h5>
+            <form id="review-form" method="post" action="{{ url_for('submit_review', restaurant_id=restaurant.id) }}">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Chọn số sao</label>
+                    <div class="rating">
+                        {% for i in range(5, 0, -1) %}
+                        <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" class="btn-check">
+                        <label for="star{{ i }}">★</label>
+                        {% endfor %}
+                    </div>
+                    <div id="rating-error" class="text-danger small mt-1" style="display:none;">Vui lòng chọn số sao!
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="comment" class="form-label fw-semibold">Nhận xét</label>
+                    <textarea name="comment" id="comment" class="form-control" rows="3"
+                              placeholder="Viết nhận xét..."></textarea>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success fw-semibold">Gửi đánh giá</button>
+                </div>
+            </form>
         </div>
-        <div class="mb-3">
-            <label for="comment" class="form-label fw-semibold">Nhận xét</label>
-            <textarea name="comment" id="comment" class="form-control" rows="3"></textarea>
-        </div>
-        <div class="text-end">
-            <button type="submit" class="btn btn-success fw-semibold">Gửi đánh giá</button>
-        </div>
-    </form>
-    {% elif current_user.is_authenticated %}
-    <div class="alert alert-warning mt-4">
-        Bạn cần đặt hàng từ nhà hàng này trước khi đánh giá.
     </div>
     {% endif %}
 
-
-    {% if restaurant.reviews %}
-    <div class="mt-5">
-        <h5 class="fw-bold mb-3">Đánh giá từ khách hàng</h5>
-        {% for r in restaurant.reviews %}
-        <div class="card card-body shadow-sm border-0 mt-2 position-relative">
-            <div class="d-flex justify-content-between">
+    <!-- Hiển thị đánh giá -->
+    <h5 class="fw-bold mt-5 mb-3">Đánh giá từ khách hàng</h5>
+    {% for r in restaurant.reviews %}
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
                 <strong>{{ r.user.name }}</strong>
                 <span class="text-warning fs-5">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</span>
             </div>
-            <p class="mb-0 mt-2">{{ r.comment }}</p>
-            <i class="text-muted position-absolute end-0 bottom-0 me-3 mb-2">
+            <p class="mb-2">{{ r.comment }}</p>
+
+            <!-- Dropdown chỉnh sửa/xóa review -->
+            {% if current_user.is_authenticated and current_user.id == r.user_id %}
+            <div class="position-absolute top-0 end-0 m-2">
+                <div class="dropdown text-end">
+                    <button class="btn btn-sm p-1" type="button" id="dropdownReview{{ r.id }}"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical fs-4 fw-bold text-dark"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownReview{{ r.id }}">
+                        <li>
+                            <a class="dropdown-item edit-review-btn" href="#" data-review-id="{{ r.id }}">
+                                <i class="bi bi-pencil-square me-2"></i> Sửa
+                            </a>
+                        </li>
+                        <li>
+                            <form action="{{ url_for('delete_review', review_id=r.id) }}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-trash me-2"></i> Xóa
+                                </button>
+                            </form>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Inline edit form -->
+            <form class="edit-review-form mt-2" data-review-id="{{ r.id }}" style="display:none;" method="post"
+                  action="{{ url_for('edit_review', review_id=r.id) }}">
+                <div class="mb-2">
+                    <div class="rating">
+                        {% for i in range(5,0,-1) %}
+                        <input type="radio" name="rating_{{ r.id }}" id="star{{ i }}_{{ r.id }}" value="{{ i }}"
+                               {% if r.rating== i %}checked{% endif %}>
+                        <label for="star{{ i }}_{{ r.id }}">★</label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <textarea name="comment" class="form-control" rows="2">{{ r.comment }}</textarea>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-sm btn-success">Cập nhật</button>
+                    <button type="button" class="btn btn-sm btn-secondary cancel-edit" data-review-id="{{ r.id }}">Hủy
+                    </button>
+                </div>
+            </form>
+
+            <!-- Phản hồi từ nhà hàng -->
+            {% if r.reply %}
+            <div class="bg-light p-2 rounded mb-2">
+                <strong>Nhà hàng phản hồi:</strong>
+                <p class="mb-0">{{ r.reply }}</p>
+                <small class="text-muted">{{ r.reply_at | vntime('%H:%M %d-%m-%Y') }}</small>
+            </div>
+            {% elif current_user.is_authenticated and current_user.role.value == 'RESTAURANT' %}
+            <!-- Form reply nếu chưa có -->
+            <form method="post" action="{{ url_for('reply_review', review_id=r.id) }}" class="mb-2">
+                <textarea name="reply" class="form-control mb-1" rows="2" placeholder="Viết phản hồi..."></textarea>
+                <button type="submit" class="btn btn-sm btn-primary">Phản hồi</button>
+            </form>
+            {% endif %}
+
+            <i class="text-muted d-block text-end">
                 {{ r.created_at | vntime('%H:%M %d-%m-%Y') }}
             </i>
         </div>
-        {% endfor %}
     </div>
-    {% endif %}
+    {% endfor %}
 
 </div>
+
+<!-- JS kiểm tra rating & edit review -->
 <script>
-    function updateMap() {
-        let address = document.getElementById("address").value;
-        if (address.trim() !== "") {
-            let mapUrl = "https://www.google.com/maps?q=" + encodeURIComponent(address) + "&output=embed";
-            document.getElementById("mapFrame").src = mapUrl
-        }
-    }
-document.getElementById("review-form").addEventListener("submit", function(e) {
+document.getElementById("review-form")?.addEventListener("submit", function(e) {
     let checked = document.querySelector('input[name="rating"]:checked')
     let errorMsg = document.getElementById("rating-error")
-
     if (!checked) {
-        e.preventDefault(); // chặn submit
-        errorMsg.style.display = "block"; // hiện thông báo
+        e.preventDefault()
+        errorMsg.style.display = "block"
     } else {
-        errorMsg.style.display = "none"; // ẩn nếu hợp lệ
+        errorMsg.style.display = "none"
     }
 })
+
+document.querySelectorAll('.edit-review-btn').forEach(btn => {
+    btn.addEventListener('click', function(e){
+        e.preventDefault();
+        const reviewId = this.dataset.reviewId;
+        const form = document.querySelector(`.edit-review-form[data-review-id="${reviewId}"]`);
+        const text = document.querySelector(`.review-text[data-review-id="${reviewId}"]`);
+
+        form.style.display = 'block';
+        text.style.display = 'none';
+    });
+});
+
+document.querySelectorAll('.cancel-edit').forEach(btn => {
+    btn.addEventListener('click', function(){
+        const reviewId = this.dataset.reviewId;
+        const form = document.querySelector(`.edit-review-form[data-review-id="${reviewId}"]`);
+        const text = document.querySelector(`.review-text[data-review-id="${reviewId}"]`);
+
+        form.style.display = 'none';
+        text.style.display = 'block';
+    });
+});
+
+
+
 </script>
+
 {% endblock %}

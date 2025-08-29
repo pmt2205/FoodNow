@@ -22,19 +22,19 @@
                 </div>
                 <div class="col-lg-5 offset-lg-1 d-none d-lg-block">
                     <div class="card p-4 shadow-lg">
-    <div class="card-body">
-        <h3 class="card-title text-center mb-4 text-dark">Tìm món ngon ngay!</h3>
-        <form action="{{ url_for('search') }}" method="get">
-            <input name="keyword" type="text" class="form-control form-control-lg mb-3"
-                   placeholder="Phở, Bún chả, Pizza...">
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-search me-2"></i>Tìm kiếm
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
+                        <div class="card-body">
+                            <h3 class="card-title text-center mb-4 text-dark">Tìm món ngon ngay!</h3>
+                            <form action="{{ url_for('search') }}" method="get">
+                                <input name="keyword" type="text" class="form-control form-control-lg mb-3"
+                                       placeholder="Phở, Bún chả, Pizza...">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-search me-2"></i>Tìm kiếm
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -51,7 +51,6 @@
 </section>
 
 
-
 <section class="container py-5">
     <h2 class="display-6 fw-bold text-center mb-5">Nhà hàng nổi bật</h2>
     <div class="row g-4">
@@ -64,7 +63,9 @@
                          class="card-img-top" alt="{{ res.name }}" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title fw-bold">{{ res.name }}</h5>
-                        <p class="card-text text-muted">{{ res.description or 'Không có mô tả' }}</p>
+                        <p class="card-text text-muted text-truncate-3">
+                            {{ res.description or 'Không có mô tả' }}
+                        </p>
                     </div>
                 </div>
             </a>
@@ -123,7 +124,6 @@
         </div>
     </div>
 </section>
-
 
 
 <!--<script>-->
@@ -279,7 +279,6 @@
 <!--        const getHomePageTemplate = () => `-->
 
 
-
 <!--        `;-->
 
 <!--        const getDiscoverPageTemplate = (filteredRestaurants = restaurants, allItems = []) => `-->
@@ -423,7 +422,6 @@
 <!--                </div>-->
 <!--            </div>-->
 <!--        `;-->
-
 
 
 <!--        const getProfileSecurityTemplate = () => `-->

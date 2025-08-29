@@ -63,7 +63,9 @@
 
                 <div class="card-body">
                     <h5 class="card-title">{{ r.name }}</h5>
-                    <p class="card-text">{{ r.description }}</p>
+                    <p class="card-text text-muted text-truncate-3">
+                            {{ r.description or 'Không có mô tả' }}
+                        </p>
 
                     <!-- Hiển thị trạng thái duyệt -->
                     <p class="card-text">

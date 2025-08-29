@@ -710,33 +710,45 @@ def view_menu(rid):
         .filter(Review.restaurant_id == rid).scalar()
     avg_rating = round(avg_rating, 1) if avg_rating else None
 
-    # Kiểm tra user đã đặt hàng chưa
+    # Kiểm tra user đã đặt hàng chưa (chỉ với CUSTOMER)
     has_ordered = False
     if current_user.is_authenticated:
-        has_ordered = Order.query.filter_by(user_id=current_user.id, restaurant_id=rid).first() is not None
+        try:
+            if current_user.role.value == 'CUSTOMER':  # Enum.value
+                order = Order.query.filter_by(user_id=current_user.id, restaurant_id=rid).first()
+                has_ordered = order is not None
+        except AttributeError:
+            # Nếu role không phải Enum
+            if current_user.role == 'CUSTOMER':
+                order = Order.query.filter_by(user_id=current_user.id, restaurant_id=rid).first()
+                has_ordered = order is not None
 
-    return render_template('menu.html',
-                           restaurant=restaurant,
-                           menu=menu,
-                           has_ordered=has_ordered,
-                           average_rating=avg_rating)
+    return render_template(
+        'menu.html',
+        restaurant=restaurant,
+        menu=menu,
+        has_ordered=has_ordered,
+        average_rating=avg_rating
+    )
 
 
 @app.route('/submit-review/<int:restaurant_id>', methods=['POST'])
 @login_required
 def submit_review(restaurant_id):
-    # Kiểm tra user đã từng đặt hàng tại nhà hàng này chưa
+    if current_user.role.value != 'CUSTOMER':
+        flash("Chỉ khách hàng mới có thể gửi đánh giá.", "danger")
+        return redirect(url_for('view_menu', rid=restaurant_id))
+
+    # kiểm tra đã đặt hàng
     has_ordered = Order.query.filter_by(
         user_id=current_user.id,
         restaurant_id=restaurant_id
     ).first()
-
     if not has_ordered:
         flash("Bạn chưa đặt hàng từ nhà hàng này.", "danger")
         return redirect(url_for('view_menu', rid=restaurant_id))
 
-    # Không cần kiểm tra đánh giá trước đó nữa
-    rating = int(request.form.get('rating'))
+    rating = int(request.form.get('rating') or 0)
     comment = request.form.get('comment')
 
     review = Review(
@@ -747,9 +759,57 @@ def submit_review(restaurant_id):
     )
     db.session.add(review)
     db.session.commit()
-
     flash("Cảm ơn bạn đã đánh giá!", "success")
     return redirect(url_for('view_menu', rid=restaurant_id))
+
+
+@app.route('/reply-review/<int:review_id>', methods=['POST'])
+@login_required
+def reply_review(review_id):
+    if current_user.role.value != 'RESTAURANT':
+        flash("Chỉ nhà hàng mới có thể phản hồi.", "danger")
+        return redirect(request.referrer)
+
+    review = Review.query.get_or_404(review_id)
+    reply_text = request.form.get('reply')
+    review.reply = reply_text
+    review.reply_at = datetime.now()
+    db.session.commit()
+    flash("Phản hồi đã được lưu.", "success")
+    return redirect(request.referrer)
+
+@app.route('/edit-review/<int:review_id>', methods=['POST'])
+@login_required
+def edit_review(review_id):
+    review = Review.query.get_or_404(review_id)
+    if review.user_id != current_user.id:
+        flash("Bạn không thể sửa đánh giá này.", "danger")
+        return redirect(url_for('view_menu', rid=review.restaurant_id))
+
+    rating = int(request.form.get(f'rating_{review_id}') or review.rating)
+    comment = request.form.get('comment') or review.comment
+
+    review.rating = rating
+    review.comment = comment
+    db.session.commit()
+    flash("Đánh giá đã được cập nhật.", "success")
+    return redirect(url_for('view_menu', rid=review.restaurant_id))
+# Xóa review (và reply đi kèm)
+@app.route('/delete-review/<int:review_id>', methods=['POST'])
+@login_required
+def delete_review(review_id):
+    review = Review.query.get_or_404(review_id)
+
+    # Chỉ owner review mới xóa được
+    if review.user_id != current_user.id:
+        flash("Bạn không thể xóa đánh giá này.", "danger")
+        return redirect(url_for('view_menu', rid=review.restaurant_id))
+
+    # Xóa review (reply sẽ bị xóa theo nếu là 1 field trong review)
+    db.session.delete(review)
+    db.session.commit()
+    flash("Đánh giá đã được xóa.", "success")
+    return redirect(url_for('view_menu', rid=review.restaurant_id))
 
 
 @app.route('/add-to-cart/<int:menu_id>')
@@ -914,17 +974,22 @@ def update_order_status(order_id):
     return redirect(url_for('my_orders'))
 
 
+from pytz import timezone, UTC
+
+
 @app.template_filter('vntime')
-def vntime(utc_dt, fmt='%d/%m/%Y %H:%M'):
-    if not utc_dt:
+def vntime(dt, fmt='%H:%M %d-%m-%Y'):
+    if not dt:
         return ''
 
-    # Gắn timezone UTC nếu chưa có (naive datetime)
-    if utc_dt.tzinfo is None:
-        utc_dt = utc.localize(utc_dt)
+    vn_tz = timezone('Asia/Ho_Chi_Minh')
 
-    vn = timezone('Asia/Ho_Chi_Minh')
-    return utc_dt.astimezone(vn).strftime(fmt)
+    # Nếu datetime có tzinfo, coi là UTC và chuyển sang VN
+    if dt.tzinfo is not None:
+        return dt.astimezone(vn_tz).strftime(fmt)
+
+    # Nếu datetime naive, coi là giờ VN luôn
+    return dt.strftime(fmt)
 
 
 @app.route('/login', methods=['GET', 'POST'])

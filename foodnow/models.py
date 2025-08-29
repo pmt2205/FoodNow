@@ -57,7 +57,7 @@ class Restaurant(BaseModel):
     address = Column(String(255), nullable=False)
     phone = Column(String(20))
     image = Column(String(255), nullable=True)
-    description = Column(String(255), nullable=True)
+    description = Column(String(5000), nullable=True)
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     status = Column(SQLAlchemyEnum(RestaurantStatus, name="restaurant_status"), default=RestaurantStatus.PENDING)
     reviews = db.relationship('Review', back_populates='restaurant', lazy=True)
@@ -155,11 +155,13 @@ class Review(BaseModel):
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurant.id'), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=True)
+    reply = db.Column(db.Text, nullable=True)  # phản hồi từ nhà hàng
+    reply_at = db.Column(db.DateTime, nullable=True)  # thời gian phản hồi
     created_at = db.Column(db.DateTime, default=datetime.now)
-
 
     user = relationship('User', back_populates='reviews')
     restaurant = relationship('Restaurant', back_populates='reviews')
+
 
 class Coupon(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

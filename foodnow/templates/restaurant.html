@@ -13,7 +13,9 @@
                          class="card-img-top" alt="{{ res.name }}" style="height: 200px; object-fit: cover;">
                     <div class="card-body">
                         <h5 class="card-title fw-bold">{{ res.name }}</h5>
-                        <p class="card-text text-muted">{{ res.description or 'Không có mô tả' }}</p>
+                        <p class="card-text text-muted text-truncate-3">
+                            {{ res.description or 'Không có mô tả' }}
+                        </p>
                     </div>
                 </div>
             </a>
