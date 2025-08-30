@@ -456,6 +456,20 @@ def payment_return():
         return redirect(url_for("view_order_detail", order_id=order_id))
 
 
+@app.route("/cancel_order/<int:order_id>", methods=["POST"])
+@login_required
+def cancel_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    # Chỉ cho hủy nếu trạng thái hợp lệ
+    if order.status in [OrderStatus.PENDING, OrderStatus.WAITTING, OrderStatus.DELIVERING]:
+        order.status = OrderStatus.CANCELLED
+        db.session.commit()
+        flash("Đơn hàng đã được hủy.", "success")
+    else:
+        flash("Không thể hủy đơn hàng này.", "warning")
+    return redirect(url_for('view_order_detail', order_id=order.id))
+
+
 @app.route("/momo_ipn", methods=["POST"])
 def momo_ipn():
     data = request.get_json(force=True, silent=True) or {}
