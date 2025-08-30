@@ -1,5 +1,5 @@
 import sys, os, utils, requests, uuid, hmac, hashlib
-from datetime import datetime,date
+from datetime import datetime, date
 from sqlalchemy.sql import func
 import re
 from pytz import timezone, utc
@@ -11,7 +11,7 @@ from foodnow import app, db, login
 from flask import render_template, request, redirect, url_for, session, flash, Flask, jsonify
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDetail, UserRole, Category, OrderStatus, \
-    Review,Coupon,Notification,UserCoupon
+    Review, Coupon, Notification, UserCoupon
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 from flask_dance.contrib.google import make_google_blueprint, google
@@ -42,6 +42,7 @@ login_manager = LoginManager(app)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))  # hoặc get_user_by_id(user_id)
+
 
 @app.route('/google')
 def google_login():
@@ -77,16 +78,19 @@ def google_login():
     login_user(user)
     return redirect(url_for('home'))
 
+
 # ===== ZALOPAY (SANDBOX) CONFIG =====
 ZALO_APP_ID = 2554
-ZALO_KEY1  = "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn"
-ZALO_KEY2  = "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf"
+ZALO_KEY1 = "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn"
+ZALO_KEY2 = "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf"
 ZALO_CREATE_ORDER_URL = "https://sb-openapi.zalopay.vn/v2/create"
 
 import json, time
 
+
 def make_app_trans_id(order_id: int) -> str:
     return datetime.now().strftime("%y%m%d") + "_" + str(order_id)
+
 
 @app.route("/create_zalopay_payment/<int:order_id>")
 @login_required
@@ -134,7 +138,7 @@ def create_zalopay_payment(order_id):
         "embed_data": embed_data,
         "item": item,
         "description": description,
-        "bank_code": "",           # để trống: cho user chọn trên Gateway
+        "bank_code": "",  # để trống: cho user chọn trên Gateway
         "callback_url": callback_url,
         "mac": mac
     }
@@ -152,6 +156,7 @@ def create_zalopay_payment(order_id):
 
     # Trường hợp lỗi -> hiển thị trả về để debug
     return f"Lỗi ZaloPay: {res}", 400
+
 
 @app.route("/payment-return/zalopay")
 @login_required
@@ -212,7 +217,7 @@ def zalopay_ipn():
             return jsonify({"return_code": -1, "return_message": "order not found"}), 404
 
         # Nếu IPN báo thành công → cập nhật sang WAITTING
-        if str(data.get("status")) == "1":   # 1 = thanh toán thành công
+        if str(data.get("status")) == "1":  # 1 = thanh toán thành công
             order.status = OrderStatus.WAITTING
             db.session.commit()
 
@@ -229,6 +234,7 @@ def zalopay_ipn():
     except Exception as e:
         print("ZaloPay IPN error:", e)
         return jsonify({"return_code": 0, "return_message": "server error"}), 500
+
 
 def send_order_email(order, user):
     try:
@@ -261,6 +267,7 @@ Cảm ơn bạn đã sử dụng dịch vụ!
         mail.send(msg)
     except Exception as e:
         print("Không gửi được mail:", str(e))
+
 
 @app.route("/checkout", methods=["POST"])
 @login_required
@@ -297,7 +304,7 @@ def checkout():
                 coupon = None
                 coupon_code = None
     # Tính tổng tiền
-    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id,coupon_code)
+    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id, coupon_code)
     for item in cart:
         menu_item = item.menu_item
         if item.quantity > menu_item.stock:
@@ -448,6 +455,7 @@ def payment_return():
     else:
         return redirect(url_for("view_order_detail", order_id=order_id))
 
+
 @app.route("/momo_ipn", methods=["POST"])
 def momo_ipn():
     data = request.get_json(force=True, silent=True) or {}
@@ -460,7 +468,7 @@ def momo_ipn():
     # Xác minh chữ ký (giữ nguyên code cũ của bạn)
 
     if str(data.get("resultCode")) == "0":
-        order.status = OrderStatus.WAITTING   # thanh toán ok → chờ xử lý
+        order.status = OrderStatus.WAITTING  # thanh toán ok → chờ xử lý
         db.session.commit()
         send_order_email(order, order.user)
     else:
@@ -480,18 +488,12 @@ def confirm_received(order_id):
         flash("Bạn không có quyền xác nhận đơn này.", "danger")
         return redirect(url_for("view_order_detail", order_id=order.id))
 
-    # Chỉ cho xác nhận khi đang giao
-    if order.status != OrderStatus.DELIVERING:
-        flash("Đơn hàng chưa đến trạng thái 'Đang giao'.", "warning")
-        return redirect(url_for("view_order_detail", order_id=order.id))
-
     # Cập nhật trạng thái
     order.status = OrderStatus.COMPLETED
     db.session.commit()
 
     flash("Xác nhận đơn hàng thành công. Cảm ơn bạn!", "success")
-    return redirect(url_for("view_menu", rid=order.restaurant_id)+ "#review-section")
-
+    return redirect(url_for("view_menu", rid=order.restaurant_id) + "#review-section")
 
 
 @app.route("/apply_coupon", methods=["POST"])
@@ -537,16 +539,17 @@ def apply_coupon():
     flash(f"Áp dụng mã {coupon.code} thành công! Giảm {coupon.discount_percent}%!", "success")
     return redirect(url_for("view_cart"))
 
+
 @app.context_processor
 def inject_notifications():
     if current_user.is_authenticated:
-        notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).all()
+        notifications = Notification.query.filter_by(user_id=current_user.id).order_by(
+            Notification.created_at.desc()).all()
         unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     else:
         notifications = []
         unread_count = 0
     return dict(notifications=notifications, unread_count=unread_count)
-
 
 
 @app.route('/')
@@ -570,7 +573,6 @@ def home():
                            hero_images=hero_images,
                            notifications=notifications,
                            unread_count=unread_count)
-
 
 
 @app.route('/search', methods=['GET'])
@@ -778,6 +780,7 @@ def reply_review(review_id):
     flash("Phản hồi đã được lưu.", "success")
     return redirect(request.referrer)
 
+
 @app.route('/edit-review/<int:review_id>', methods=['POST'])
 @login_required
 def edit_review(review_id):
@@ -794,6 +797,8 @@ def edit_review(review_id):
     db.session.commit()
     flash("Đánh giá đã được cập nhật.", "success")
     return redirect(url_for('view_menu', rid=review.restaurant_id))
+
+
 # Xóa review (và reply đi kèm)
 @app.route('/delete-review/<int:review_id>', methods=['POST'])
 @login_required
@@ -836,7 +841,7 @@ def add_to_cart(menu_id):
     else:
         item = CartItem(user_id=current_user.id, menu_item_id=menu_id, quantity=1)
         db.session.add(item)
-        is_new_item = True  #Đánh dấu là món mới
+        is_new_item = True  # Đánh dấu là món mới
 
     db.session.commit()
 
@@ -848,15 +853,19 @@ from flask_login import LoginManager
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
-login_manager.init_app(app)   # quan trọng: bind với Flask app
+login_manager.init_app(app)  # quan trọng: bind với Flask app
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     flash("Bạn cần đăng nhập để thêm món ăn vào giỏ hàng.", "warning")
     return redirect(url_for("login_process"))
+
 
 @app.route('/cart')
 @login_required
@@ -865,7 +874,7 @@ def view_cart():
     coupon_code = session.get("applied_coupon")  # lấy coupon từ session nếu có
     phone = request.form.get("phone")
     address = request.form.get("address")
-    subtotal, discount, total_price = utils.calculate_total_price(cart,current_user.id,coupon_code)
+    subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id, coupon_code)
 
     return render_template('cart.html',
                            cart=cart,
@@ -900,7 +909,6 @@ def remove_from_cart(cart_id):
     return redirect(url_for('view_cart'))
 
 
-
 from flask_mail import Message
 
 
@@ -913,7 +921,8 @@ def view_order_detail(order_id):
         flash("Bạn không có quyền xem đơn hàng này", "danger")
         return redirect(url_for("home"))
 
-    return render_template('order_detail.html', order=order,OrderStatus=OrderStatus)
+    return render_template('order_detail.html', order=order, OrderStatus=OrderStatus)
+
 
 @app.route('/notification/mark_read/<int:notification_id>', methods=['POST'])
 @login_required
@@ -924,8 +933,6 @@ def mark_notification_read(notification_id):
         db.session.commit()
         return '', 204
     return 'Not found', 404
-
-
 
 
 @app.route('/my-orders')
@@ -1038,11 +1045,12 @@ def register_process():
         if not password:
             flash("Mật khẩu không được để trống!", "error")
         if User.query.filter_by(email=email).first():
-            return render_template("register.html",form=request.form, err_msg="Email đã được sử dụng!")
+            return render_template("register.html", form=request.form, err_msg="Email đã được sử dụng!")
         if User.query.filter_by(username=username).first():
-            return render_template("register.html",form=request.form, err_msg="Tên đăng nhập đã tồn tại!")
+            return render_template("register.html", form=request.form, err_msg="Tên đăng nhập đã tồn tại!")
         elif not re.match(pattern, password):
-            return render_template("register.html",form=request.form, err_msg="Mật khẩu phải ≥8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt!")
+            return render_template("register.html", form=request.form,
+                                   err_msg="Mật khẩu phải ≥8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt!")
         if password == confirm:
             data = request.form.copy()
             del data['confirm']
@@ -1062,7 +1070,7 @@ def register_process():
         else:
             error_msg = 'Mật khẩu xác nhận không khớp!'
 
-    return render_template('register.html',form={}, err_msg=error_msg)
+    return render_template('register.html', form={}, err_msg=error_msg)
 
 
 @login.user_loader
@@ -1078,6 +1086,7 @@ def profile():
     error_msg = ''
     success_msg = ''
     orders = []
+    vouchers = []
     if request.method == 'POST':
         if tab == 'info':
             name = request.form.get('name')
@@ -1143,10 +1152,25 @@ def profile():
                 db.session.commit()
                 success_msg = "Đổi mật khẩu thành công."
                 print("DEBUG - New hash saved:", current_user.password)
+    if tab == 'vouchers':
+        # Lấy tất cả coupon từ database
+        coupons = Coupon.query.all()
+
+        # Lấy các voucher user đã dùng (UserCoupon)
+        user_coupons = {uc.coupon_id: uc for uc in UserCoupon.query.filter_by(user_id=user.id).all()}
+
+        # Tạo danh sách voucher kèm trạng thái used_at
+        vouchers = []
+        for c in coupons:
+            uc = user_coupons.get(c.id)
+            vouchers.append({
+                "coupon": c,
+                "used_at": uc.used_at if uc else None
+            })
 
     if tab == 'orders':
         orders = Order.query.filter_by(user_id=user.id).all()
-    return render_template('profile.html', user=user, tab=tab, orders=orders,
+    return render_template('profile.html', user=user, tab=tab, orders=orders, vouchers=vouchers,
                            error_msg=error_msg, success_msg=success_msg)
 
 
@@ -1230,6 +1254,7 @@ def inject_cart_count():
         count = CartItem.query.filter_by(user_id=current_user.id).count()
     return dict(cart_count=count)
 
+
 @app.route('/remove_coupon')
 @login_required
 def remove_coupon():
@@ -1237,7 +1262,9 @@ def remove_coupon():
     flash("Đã hủy mã giảm giá!", "info")
     return redirect(url_for('view_cart'))
 
+
 if __name__ == '__main__':
     with app.app_context():
         from foodnow import admin
+
         app.run(debug=True, host="0.0.0.0", port=80)

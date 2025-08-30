@@ -66,7 +66,7 @@
 
     <!-- Form đánh giá -->
     {% if current_user.is_authenticated and current_user.role.value == 'CUSTOMER' and has_ordered %}
-    <div class="card shadow-sm border-0 mb-4">
+    <div id="review-section" class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <h5 class="fw-bold mb-3">Đánh giá nhà hàng</h5>
             <form id="review-form" method="post" action="{{ url_for('submit_review', restaurant_id=restaurant.id) }}">

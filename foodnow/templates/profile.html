@@ -20,6 +20,8 @@
                        class="nav-link {% if tab == 'info' %}active{% endif %}">Thông tin cá nhân</a>
                     <a href="{{ url_for('profile', tab='security') }}"
                        class="nav-link {% if tab == 'security' %}active{% endif %}">Bảo mật</a>
+                    <a href="{{ url_for('profile', tab='vouchers') }}"
+                       class="nav-link {% if tab == 'vouchers' %}active{% endif %}">Kho Voucher </a>
                     <a href="{{ url_for('profile', tab='orders') }}"
                        class="nav-link {% if tab == 'orders' %}active{% endif %}">Đơn hàng của tôi</a>
 
@@ -123,6 +125,50 @@
                         <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
                     </div>
                 </form>
+                {% elif tab == 'vouchers' %}
+                <h3 class="fw-bold mb-4">Voucher của tôi</h3>
+                <div class="d-flex flex-column gap-3">
+                    {% if vouchers %}
+                    {% for v in vouchers %}
+                    <div class="card card-body shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="fw-bold mb-1 text-primary">{{ v.coupon.code }}</h5>
+                                <p class="mb-1">Giảm <strong>{{ v.coupon.discount_percent }}%</strong></p>
+                                <p class="text-muted small mb-0">
+                                    {% if v.coupon.expires_at %}
+                                    Hạn dùng: {{ v.coupon.expires_at.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                    Hạn dùng: Không giới hạn
+                                    {% endif %}
+                                </p>
+                                <p class="mb-2 text-muted small">
+                                    Hóa đơn từ
+                                    <strong class="text-primary ms-1">{{ '{:,.0f} '.format(v.coupon.min_order_value | default(0)) }}
+                                        VND</strong>
+                                </p>
+
+                            </div>
+                            <div class="text-end">
+                                {% if v.used_at %}
+                                <span class="badge bg-secondary">Đã sử dụng</span>
+                                {% elif not v.coupon.is_valid() %}
+                                <span class="badge bg-secondary">Hết hạn</span>
+                                {% else %}
+                                <span class="badge bg-success">Còn hiệu lực</span>
+                                <form method="POST" action="{{ url_for('apply_coupon') }}">
+                                    <input type="hidden" name="coupon_code" value="{{ v.coupon.code }}">
+                                    <button class="btn btn-sm btn-primary mt-1">Áp dụng</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p>Bạn chưa có voucher nào.</p>
+                    {% endif %}
+                </div>
 
 
                 {% elif tab == 'orders' %}
