@@ -1220,7 +1220,6 @@ def edit_restaurant(restaurant_id):
         restaurant.address = request.form.get('address')
         restaurant.phone = request.form.get('phone')
         restaurant.description = request.form.get('description')
-
         # Nếu có upload ảnh mới
         image = request.files.get('image')
         if image and image.filename != '':
@@ -1259,7 +1258,6 @@ def delete_restaurant(restaurant_id):
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
-
 
 @app.context_processor
 def inject_cart_count():
