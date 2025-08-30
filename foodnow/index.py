@@ -354,9 +354,11 @@ def checkout():
         user_coupon = UserCoupon(user_id=current_user.id, coupon_id=coupon.id)
         db.session.add(user_coupon)
         coupon.used_count += 1
+    user_orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.asc()).all()
+    display_id = next((idx + 1 for idx, o in enumerate(user_orders) if o.id == order.id), 1)
     notification = Notification(
         user_id=current_user.id,
-        message=f"Đơn hàng #{order.id} của bạn đã được đặt thành công!",
+        message=f"Đơn hàng #{display_id} của bạn đã được đặt thành công!",
         order_id=order.id
     )
     db.session.add(notification)
@@ -460,13 +462,22 @@ def payment_return():
 @login_required
 def cancel_order(order_id):
     order = Order.query.get_or_404(order_id)
+
     # Chỉ cho hủy nếu trạng thái hợp lệ
-    if order.status in [OrderStatus.PENDING, OrderStatus.WAITTING, OrderStatus.DELIVERING]:
+    if order.status in [OrderStatus.PENDING, OrderStatus.WAITTING]:
+        # Cập nhật trạng thái
         order.status = OrderStatus.CANCELLED
+
+        # Cộng lại số lượng món ăn
+        for detail in order.details:
+            if detail.menu_item:  # phòng trường hợp món đã bị xóa
+                detail.menu_item.stock += detail.quantity
+
         db.session.commit()
         flash("Đơn hàng đã được hủy.", "success")
     else:
         flash("Không thể hủy đơn hàng này.", "warning")
+
     return redirect(url_for('view_order_detail', order_id=order.id))
 
 
@@ -934,8 +945,10 @@ def view_order_detail(order_id):
     if order.user_id != current_user.id and current_user.role != UserRole.ADMIN:
         flash("Bạn không có quyền xem đơn hàng này", "danger")
         return redirect(url_for("home"))
+    user_orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.asc()).all()
 
-    return render_template('order_detail.html', order=order, OrderStatus=OrderStatus)
+    display_id = next((idx + 1 for idx, o in enumerate(user_orders) if o.id == order.id), None)
+    return render_template('order_detail.html',display_id=display_id, order=order, OrderStatus=OrderStatus)
 
 
 @app.route('/notification/mark_read/<int:notification_id>', methods=['POST'])
@@ -962,7 +975,8 @@ def my_orders():
     # Lấy đơn hàng thuộc các nhà hàng đó
     orders = Order.query.filter(Order.restaurant_id.in_(restaurant_ids)) \
         .order_by(Order.created_at.desc()).all()
-
+    for idx, order in enumerate(orders, start=1):
+        order.display_id = idx
     return render_template('restaurant_orders.html', orders=orders)
 
 
@@ -975,10 +989,8 @@ def update_order_status(order_id):
 
     order = Order.query.get_or_404(order_id)
 
-    # Lấy danh sách id nhà hàng của user
+    # Kiểm tra đơn hàng thuộc nhà hàng của user
     user_restaurant_ids = [r.id for r in current_user.restaurants]
-
-    # Kiểm tra đơn hàng có thuộc nhà hàng của user hay không
     if order.restaurant_id not in user_restaurant_ids:
         flash("Không thể sửa đơn hàng không thuộc nhà hàng bạn.", "danger")
         return redirect(url_for('restaurant_orders'))
@@ -986,13 +998,23 @@ def update_order_status(order_id):
     # Lấy trạng thái mới từ form
     new_status = request.form.get('status')
     try:
+        old_status = order.status
         order.status = OrderStatus[new_status]
+
+        # Nếu hủy đơn và trước đó chưa hủy -> cộng lại số lượng món ăn
+        if new_status == "CANCELLED" and old_status.name != "CANCELLED":
+            for detail in order.details:
+                detail.menu_item.stock += detail.quantity
+            flash("Đơn hàng đã bị hủy. Số lượng món ăn đã được cập nhật.", "success")
+        else:
+            flash("Cập nhật trạng thái thành công.", "success")
+
         db.session.commit()
-        flash("Cập nhật trạng thái thành công.", "success")
     except KeyError:
         flash("Trạng thái không hợp lệ.", "danger")
 
     return redirect(url_for('my_orders'))
+
 
 
 from pytz import timezone, UTC
@@ -1184,6 +1206,8 @@ def profile():
 
     if tab == 'orders':
         orders = Order.query.filter_by(user_id=user.id).all()
+        for idx, order in enumerate(orders, start=1):
+            order.display_id = idx
     return render_template('profile.html', user=user, tab=tab, orders=orders, vouchers=vouchers,
                            error_msg=error_msg, success_msg=success_msg)
 
@@ -1220,6 +1244,7 @@ def edit_restaurant(restaurant_id):
         restaurant.address = request.form.get('address')
         restaurant.phone = request.form.get('phone')
         restaurant.description = request.form.get('description')
+
         # Nếu có upload ảnh mới
         image = request.files.get('image')
         if image and image.filename != '':
@@ -1254,9 +1279,11 @@ def delete_restaurant(restaurant_id):
     flash('Xóa nhà hàng thành công.', 'success')
     return redirect(url_for('my_restaurant'))
 
+
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
+
 
 @app.context_processor
 def inject_cart_count():
