@@ -1254,7 +1254,6 @@ def delete_restaurant(restaurant_id):
     flash('Xóa nhà hàng thành công.', 'success')
     return redirect(url_for('my_restaurant'))
 
-
 @app.context_processor
 def inject_common():
     return dict(restaurants=Restaurant.query.all())
