@@ -13,8 +13,6 @@ db = SQLAlchemy(app)
 login = LoginManager(app)
 
 
-
-
 cloudinary.config(
     cloud_name="dtnfkk7ih",
     api_key="794598113389753",
