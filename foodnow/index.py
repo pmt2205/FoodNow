@@ -16,6 +16,16 @@ from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 from flask_dance.contrib.google import make_google_blueprint, google
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client_id = os.getenv('CLIENT_ID')
+client_secret = os.getenv('CLIENT_SECRET')
+
+print(client_id)
+print(client_secret)
+
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -26,7 +36,8 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Cấu hình Google OAuth
 google_bp = make_google_blueprint(
-
+    client_id=client_id,
+    client_secret=client_secret,
     redirect_to='google_login',
     scope=[
         "https://www.googleapis.com/auth/userinfo.email",

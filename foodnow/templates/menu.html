@@ -46,7 +46,7 @@
                     <div>
                         <h5 class="fw-bold">{{ item.name }}</h5>
                         <p class="text-success fw-semibold mb-0">{{ '{:,.0f} đ'.format(item.price) }}</p>
-                        <p class="text-muted">{{ item.description }}</p>
+                        <p class="text-muted text-truncate-3">{{ item.description }}</p>
                         {% if item.stock > 0 %}
                         {% if item.stock < 10 %}
                         <span class="text-warning">Chỉ còn {{ item.stock }} phần</span>
