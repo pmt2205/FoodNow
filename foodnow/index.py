@@ -3,9 +3,7 @@ from datetime import datetime, date
 from sqlalchemy.sql import func
 import re
 from pytz import timezone, utc
-
 from foodnow.admin import CouponAdmin
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from foodnow import app, db, login
 from flask import render_template, request, redirect, url_for, session, flash, Flask, jsonify
@@ -15,26 +13,25 @@ from foodnow.models import Restaurant, MenuItem, CartItem, User, Order, OrderDet
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 from flask_dance.contrib.google import make_google_blueprint, google
-
 from dotenv import load_dotenv
+import json, time
+from sqlalchemy.sql import func
 
+ZALO_APP_ID = 2554
+ZALO_KEY1 = "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn"
+ZALO_KEY2 = "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf"
+ZALO_CREATE_ORDER_URL = "https://sb-openapi.zalopay.vn/v2/create"
 load_dotenv()
-
 client_id = os.getenv('CLIENT_ID')
 client_secret = os.getenv('CLIENT_SECRET')
-
-print(client_id)
-print(client_secret)
-
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'nguyenphu1999f@gmail.com'  # Thay bằng email của bạn
-app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'  # Mật khẩu ứng dụng (không phải mật khẩu Gmail)
+app.config['MAIL_USERNAME'] = 'nguyenphu1999f@gmail.com'
+app.config['MAIL_PASSWORD'] = 'auie bsfh mvee mzvf'
 mail = Mail(app)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-# Cấu hình Google OAuth
 google_bp = make_google_blueprint(
     client_id=client_id,
     client_secret=client_secret,
@@ -49,11 +46,9 @@ app.register_blueprint(google_bp, url_prefix="/login")
 
 login_manager = LoginManager(app)
 
-
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))  # hoặc get_user_by_id(user_id)
-
+    return User.query.get(int(user_id))
 
 @app.route('/google')
 def google_login():
@@ -66,9 +61,8 @@ def google_login():
         return redirect(url_for("login"))
 
     info = resp.json()
-    print("Google user info:", info)  # ✅ In ra để debug
+    print("Google user info:", info)
 
-    # Xử lý email fallback
     email = info.get("email")
     if not email:
         email = f'{info["id"]}@google.local'  # Tạo email giả nếu thiếu
@@ -89,19 +83,8 @@ def google_login():
     login_user(user)
     return redirect(url_for('home'))
 
-
-# ===== ZALOPAY (SANDBOX) CONFIG =====
-ZALO_APP_ID = 2554
-ZALO_KEY1 = "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn"
-ZALO_KEY2 = "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf"
-ZALO_CREATE_ORDER_URL = "https://sb-openapi.zalopay.vn/v2/create"
-
-import json, time
-
-
 def make_app_trans_id(order_id: int) -> str:
     return datetime.now().strftime("%y%m%d") + "_" + str(order_id)
-
 
 @app.route("/create_zalopay_payment/<int:order_id>")
 @login_required
@@ -168,7 +151,6 @@ def create_zalopay_payment(order_id):
     # Trường hợp lỗi -> hiển thị trả về để debug
     return f"Lỗi ZaloPay: {res}", 400
 
-
 @app.route("/payment-return/zalopay")
 @login_required
 def payment_return_zalopay():
@@ -200,7 +182,6 @@ def payment_return_zalopay():
         flash("Đơn hàng đang chờ xác nhận thanh toán. Vui lòng chờ ít phút.", "info")
 
     return redirect(url_for("view_order_detail", order_id=order.id))
-
 
 @app.route("/zalopay_ipn", methods=["POST"])
 def zalopay_ipn():
@@ -246,10 +227,8 @@ def zalopay_ipn():
         print("ZaloPay IPN error:", e)
         return jsonify({"return_code": 0, "return_message": "server error"}), 500
 
-
 def send_order_email(order, user):
     try:
-        # Tạo danh sách chi tiết món
         content_lines = [
             f"{item.menu_item.name} x {item.quantity} = {item.menu_item.price * item.quantity:,} VNĐ"
             for item in OrderDetail.query.filter_by(order_id=order.id).all()
@@ -278,7 +257,6 @@ Cảm ơn bạn đã sử dụng dịch vụ!
         mail.send(msg)
     except Exception as e:
         print("Không gửi được mail:", str(e))
-
 
 @app.route("/checkout", methods=["POST"])
 @login_required
@@ -391,7 +369,6 @@ def checkout():
         flash("Phương thức thanh toán không hợp lệ", "danger")
         return redirect(url_for("view_cart"))
 
-
 @app.route("/create_momo_payment/<int:order_id>")
 @login_required
 def create_momo_payment(order_id):
@@ -450,11 +427,9 @@ def create_momo_payment(order_id):
     else:
         return f"Lỗi MoMo: {res}", 400
 
-
 @app.route("/payment_return")
 def payment_return():
     result_code = request.args.get("resultCode")
-    message = request.args.get("message", "")
     extra_data = request.args.get("extraData")  # chính là order_id mình truyền
     order_id = extra_data if extra_data else None
 
@@ -467,7 +442,6 @@ def payment_return():
         return redirect(url_for("view_order_detail", order_id=order_id))
     else:
         return redirect(url_for("view_order_detail", order_id=order_id))
-
 
 @app.route("/cancel_order/<int:order_id>", methods=["POST"])
 @login_required
@@ -491,7 +465,6 @@ def cancel_order(order_id):
 
     return redirect(url_for('view_order_detail', order_id=order.id))
 
-
 @app.route("/momo_ipn", methods=["POST"])
 def momo_ipn():
     data = request.get_json(force=True, silent=True) or {}
@@ -513,7 +486,6 @@ def momo_ipn():
 
     return "ok", 200
 
-
 @app.route("/confirm_received/<int:order_id>", methods=["POST"])
 @login_required
 def confirm_received(order_id):
@@ -530,7 +502,6 @@ def confirm_received(order_id):
 
     flash("Xác nhận đơn hàng thành công. Cảm ơn bạn!", "success")
     return redirect(url_for("view_menu", rid=order.restaurant_id) + "#review-section")
-
 
 @app.route("/apply_coupon", methods=["POST"])
 @login_required
@@ -575,7 +546,6 @@ def apply_coupon():
     flash(f"Áp dụng mã {coupon.code} thành công! Giảm {coupon.discount_percent}%!", "success")
     return redirect(url_for("view_cart"))
 
-
 @app.context_processor
 def inject_notifications():
     if current_user.is_authenticated:
@@ -586,7 +556,6 @@ def inject_notifications():
         notifications = []
         unread_count = 0
     return dict(notifications=notifications, unread_count=unread_count)
-
 
 @app.route('/')
 def home():
@@ -609,7 +578,6 @@ def home():
                            hero_images=hero_images,
                            notifications=notifications,
                            unread_count=unread_count)
-
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -644,12 +612,10 @@ def search():
                            selected_category_id=category_id,
                            query=keyword)
 
-
 @app.route('/restaurant')
 def restaurant():
     restaurants = Restaurant.query.all()
     return render_template('restaurant.html', restaurants=restaurants)
-
 
 @app.route('/my-restaurant', methods=['GET', 'POST'])
 @login_required
@@ -744,9 +710,6 @@ def manage_menu(restaurant_id):
                            menu_items=menu_items,
                            categories=categories)
 
-from sqlalchemy.sql import func
-
-
 @app.route('/restaurant/<int:rid>')
 def view_menu(rid):
     restaurant = Restaurant.query.get_or_404(rid)
@@ -778,7 +741,6 @@ def view_menu(rid):
         average_rating=avg_rating
     )
 
-
 @app.route('/submit-review/<int:restaurant_id>', methods=['POST'])
 @login_required
 def submit_review(restaurant_id):
@@ -809,7 +771,6 @@ def submit_review(restaurant_id):
     flash("Cảm ơn bạn đã đánh giá!", "success")
     return redirect(url_for('view_menu', rid=restaurant_id))
 
-
 @app.route('/reply-review/<int:review_id>', methods=['POST'])
 @login_required
 def reply_review(review_id):
@@ -824,7 +785,6 @@ def reply_review(review_id):
     db.session.commit()
     flash("Phản hồi đã được lưu.", "success")
     return redirect(request.referrer)
-
 
 @app.route('/edit-review/<int:review_id>', methods=['POST'])
 @login_required
@@ -843,8 +803,6 @@ def edit_review(review_id):
     flash("Đánh giá đã được cập nhật.", "success")
     return redirect(url_for('view_menu', rid=review.restaurant_id))
 
-
-# Xóa review (và reply đi kèm)
 @app.route('/delete-review/<int:review_id>', methods=['POST'])
 @login_required
 def delete_review(review_id):
@@ -860,7 +818,6 @@ def delete_review(review_id):
     db.session.commit()
     flash("Đánh giá đã được xóa.", "success")
     return redirect(url_for('view_menu', rid=review.restaurant_id))
-
 
 @app.route('/add-to-cart/<int:menu_id>')
 @login_required
@@ -893,32 +850,26 @@ def add_to_cart(menu_id):
     flash(f"Đã thêm {menu_item.name} vào giỏ hàng!", "success")
     return redirect(url_for("view_cart"))
 
-
 from flask_login import LoginManager
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
-login_manager.init_app(app)  # quan trọng: bind với Flask app
-
+login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     flash("Bạn cần đăng nhập để thêm món ăn vào giỏ hàng.", "warning")
     return redirect(url_for("login_process"))
 
-
 @app.route('/cart')
 @login_required
 def view_cart():
     cart = CartItem.query.filter_by(user_id=current_user.id).all()
     coupon_code = session.get("applied_coupon")  # lấy coupon từ session nếu có
-    phone = request.form.get("phone")
-    address = request.form.get("address")
     subtotal, discount, total_price = utils.calculate_total_price(cart, current_user.id, coupon_code)
 
     return render_template('cart.html',
@@ -928,7 +879,6 @@ def view_cart():
                            total_price=total_price,
                            coupon_code=coupon_code,
                            )
-
 
 @app.route('/cart/update/<int:cart_id>/<change>')
 @login_required
@@ -943,7 +893,6 @@ def update_cart_quantity(cart_id, change):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
-
 @app.route('/cart/remove/<int:cart_id>')
 @login_required
 def remove_from_cart(cart_id):
@@ -953,9 +902,7 @@ def remove_from_cart(cart_id):
     db.session.commit()
     return redirect(url_for('view_cart'))
 
-
 from flask_mail import Message
-
 
 @app.route('/order/<int:order_id>')
 @login_required
@@ -970,7 +917,6 @@ def view_order_detail(order_id):
     display_id = next((idx + 1 for idx, o in enumerate(user_orders) if o.id == order.id), None)
     return render_template('order_detail.html',display_id=display_id, order=order, OrderStatus=OrderStatus)
 
-
 @app.route('/notification/mark_read/<int:notification_id>', methods=['POST'])
 @login_required
 def mark_notification_read(notification_id):
@@ -980,7 +926,6 @@ def mark_notification_read(notification_id):
         db.session.commit()
         return '', 204
     return 'Not found', 404
-
 
 @app.route('/my-orders')
 @login_required
@@ -998,7 +943,6 @@ def my_orders():
     for idx, order in enumerate(orders, start=1):
         order.display_id = idx
     return render_template('restaurant_orders.html', orders=orders)
-
 
 @app.route('/update-order-status/<int:order_id>', methods=['POST'])
 @login_required
@@ -1035,10 +979,7 @@ def update_order_status(order_id):
 
     return redirect(url_for('my_orders'))
 
-
-
 from pytz import timezone, UTC
-
 
 @app.template_filter('vntime')
 def vntime(dt, fmt='%H:%M %d-%m-%Y'):
@@ -1054,7 +995,6 @@ def vntime(dt, fmt='%H:%M %d-%m-%Y'):
     # Nếu datetime naive, coi là giờ VN luôn
     return dt.strftime(fmt)
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login_process():
     if request.method == 'POST':
@@ -1069,7 +1009,6 @@ def login_process():
 
     return render_template('login.html')
 
-
 @app.route('/login-admin', methods=['post'])
 def login_admin_process():
     username = request.form.get('username')
@@ -1080,12 +1019,10 @@ def login_admin_process():
 
     return redirect('/admin')
 
-
 @app.route('/logout')
 def logout_process():
     logout_user()
     return redirect(url_for('home'))
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_process():
@@ -1128,11 +1065,9 @@ def register_process():
 
     return render_template('register.html', form={}, err_msg=error_msg)
 
-
 @login.user_loader
 def load_user(user_id):
     return utils.get_user_by_id(user_id)
-
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -1231,7 +1166,6 @@ def profile():
     return render_template('profile.html', user=user, tab=tab, orders=orders, vouchers=vouchers,
                            error_msg=error_msg, success_msg=success_msg)
 
-
 @app.route('/menu_item/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_menu_item(item_id):
@@ -1286,7 +1220,6 @@ def edit_restaurant(restaurant_id):
 
     return render_template('edit_restaurant.html', restaurant=restaurant)
 
-
 @app.route('/menu_item/delete/<int:item_id>', methods=['POST'])
 @login_required
 def delete_menu_item(item_id):
@@ -1295,7 +1228,6 @@ def delete_menu_item(item_id):
     db.session.delete(item)
     db.session.commit()
     return redirect(url_for('manage_menu', restaurant_id=restaurant_id))
-
 
 @app.route('/delete_restaurant/<int:restaurant_id>', methods=['POST'])
 def delete_restaurant(restaurant_id):
