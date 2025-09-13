@@ -664,19 +664,26 @@ def my_restaurant():
         description = request.form.get('description')
         image = request.files.get('image')
 
-        filename = None
+        image_url = None
         if image and image.filename != '':
+            # Tạo tên file an toàn
             filename = secure_filename(image.filename)
-            upload_path = os.path.join('static/images', filename)
-            os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-            image.save(upload_path)
+
+            # Upload thẳng lên Cloudinary
+            upload_result = cloudinary.uploader.upload(
+                image,
+                folder="restaurant_images",  # thư mục trên Cloudinary
+                public_id=filename.rsplit('.', 1)[0],  # tên file không có đuôi
+                overwrite=True
+            )
+            image_url = upload_result['secure_url']  # Lấy URL trả về
 
         restaurant = Restaurant(
             name=name,
             address=address,
             phone=phone,
             description=description,
-            image='/' + upload_path if filename else None,
+            image=image_url,  # Lưu URL Cloudinary
             user_id=current_user.id  # Gán user hiện tại làm chủ
         )
         db.session.add(restaurant)
@@ -686,7 +693,6 @@ def my_restaurant():
     # GET: render form
     my_restaurants = Restaurant.query.filter_by(user_id=current_user.id).all()
     return render_template('my_restaurant.html', restaurants=my_restaurants)
-
 
 @app.route('/manage-menu/<int:restaurant_id>', methods=['GET', 'POST'])
 @login_required
@@ -703,15 +709,19 @@ def manage_menu(restaurant_id):
         category_id = int(request.form.get('category_id'))
         stock = float(request.form.get('stock'))
         image = request.files.get('image')
-        filename = None
+
+        image_url = None
         if image and image.filename != '':
+            # Tạo tên file an toàn
             filename = secure_filename(image.filename)
-            upload_path = os.path.join('static/images', filename)
-            os.makedirs(os.path.dirname(upload_path), exist_ok=True)
-            image.save(upload_path)
-            image_path = '/' + upload_path
-        else:
-            image_path = None
+            # Upload lên Cloudinary
+            upload_result = cloudinary.uploader.upload(
+                image,
+                folder="menu_images",
+                public_id=filename.rsplit('.', 1)[0],  # tên file không có đuôi
+                overwrite=True
+            )
+            image_url = upload_result['secure_url']  # Lấy URL trả về
 
         menu_item = MenuItem(
             name=name,
@@ -720,7 +730,7 @@ def manage_menu(restaurant_id):
             category_id=category_id,
             restaurant_id=restaurant.id,
             stock=stock,
-            image=image_path
+            image=image_url  # Lưu URL Cloudinary
         )
         db.session.add(menu_item)
         db.session.commit()
@@ -733,7 +743,6 @@ def manage_menu(restaurant_id):
                            restaurant=restaurant,
                            menu_items=menu_items,
                            categories=categories)
-
 
 from sqlalchemy.sql import func
 
@@ -1245,6 +1254,7 @@ def edit_menu_item(item_id):
 
     return render_template('edit_menu_item.html', item=item, categories=categories)
 
+import cloudinary
 
 @app.route('/edit_restaurant/<int:restaurant_id>', methods=['GET', 'POST'])
 def edit_restaurant(restaurant_id):
@@ -1258,12 +1268,17 @@ def edit_restaurant(restaurant_id):
 
         # Nếu có upload ảnh mới
         image = request.files.get('image')
+
         if image and image.filename != '':
-            # ⚠️ Triển khai upload lên Cloudinary/S3 hoặc lưu local tuỳ dự án
-            # Ví dụ lưu local:
-            image_path = f'static/uploads/{image.filename}'
-            image.save(image_path)
-            restaurant.image = '/' + image_path
+            # Upload lên Cloudinary
+            upload_result = cloudinary.uploader.upload(
+                image,
+                folder="restaurant_images",  # optional: thư mục trên Cloudinary
+                public_id=image.filename.rsplit('.', 1)[0],  # tên file không có đuôi
+                overwrite=True
+            )
+
+            restaurant.image = upload_result['secure_url']
 
         db.session.commit()
         flash('Cập nhật nhà hàng thành công.', 'success')
