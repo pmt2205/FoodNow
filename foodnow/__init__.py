@@ -9,7 +9,7 @@ import cloudinary.uploader
 
 app = Flask(__name__)
 app.secret_key = "KJGHJG^&*%&*^T&*(IGFG%ERFTGHCFHGF^&**&TYIU"
-app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://lehongduc3491:123456789a@foodnow.cmt80s82axqx.us-east-1.rds.amazonaws.com/foodnow?charset=utf8mb4"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://admin:123456789a@database.c4tmq86mca9u.us-east-1.rds.amazonaws.com/foodnow?charset=utf8mb4"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 db = SQLAlchemy(app)
 login = LoginManager(app)
